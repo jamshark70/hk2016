@@ -46,6 +46,14 @@ Proto {
 		~parentView = parentView ?? { View() };
 
 		~layout = VLayout(
+			HLayout(
+				StaticText().string_("Local:").align_(\right),
+				~localIpView = StaticText()
+			),
+			HLayout(
+				StaticText().string_("Remote:").align_(\right),
+				~remoteIpView = StaticText()
+			),
 			~touchParent = View().fixedSize_(touchExtent + Point(-4, 4)),
 			// other views
 		);
@@ -55,14 +63,67 @@ Proto {
 		));
 		~parentView.layout = ~layout;
 
+		~getLocalIP.();  // async, assumes unixy
+		~setRemoteIPResp.();
+
 		currentEnvironment
 	};
 	~free = {
+		~freeRemoteIPResp.();
 		BP(~touchGuiName).free;
 		if(~iMadeTouch) { BP(~touchName).free };
 		// remove other views?
 	};
 	~freeCleanup = { ~free.() };
+
+	// async, assumes unixy
+	~getLocalIP = {
+		if(thisProcess.platform.name != \windows) {
+			~getStdOutAsync.("ifconfig", e { |stdout|
+				var line = stdout.split($\n).detect { |line|
+					line.contains("192.168");
+				}, match;
+				if(line.notNil and: {
+					match = line.findRegexp("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
+					match.notEmpty
+				}) {
+					defer(e { ~localIpView.string = match[0][1] ++ ":" ++ NetAddr.langPort });
+				} {
+					"Failed to get local IP".warn;
+				};
+			});
+		} {
+			"getLocalIP not supported in Windows yet.".warn;
+		};
+	};
+
+	~setRemoteIPResp = {
+		NotificationCenter.register(BP(~touchName).v, '/ping', ~touchName, e { |msg, time, replyAddr|
+			defer(e {
+				~remoteIpView.string = replyAddr.ip ++ ":" ++ BP(~touchName).sendPort;
+			});
+		});
+	};
+	~freeRemoteIPResp = {
+		NotificationCenter.unregister(BP(~touchName).v, '/ping', ~touchName);
+	};
+
+	~getStdOutAsync = { |cmd, func|
+		var temp = PathName.tmp +/+ Date.getDate.stamp,
+		file, output;
+		(cmd ++ " >" ++ temp).unixCmd({ |exitCode|
+			file = File(temp, "r");
+			if(file.isOpen) {
+				protect {
+					output = file.readAllString;
+				} { file.close };
+				func.value(output, exitCode);
+			} {
+				func.("", 0x7FFFFFFF);
+			};
+			File.delete(temp);
+		}, postOutput: false);
+	};
 } => PR(\touchManager);
 
 
