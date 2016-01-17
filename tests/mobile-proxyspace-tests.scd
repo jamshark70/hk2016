@@ -43,3 +43,12 @@ NotificationCenter.unregister(BP(\touch).v, '/1/toggle1', \me);
 
 ~grain.trace
 q.buf.duration
+
+
+// proxy introspection
+Ndef(\a, { |freq = 440| Silent.ar(1) });
+Ndef(\a)
+Ndef.browse
+NdefParamGui
+Ndef(\a).getKeysValues
+Ndef(\a).clear;

@@ -67,16 +67,42 @@ v.children.choose.remove;
 // testing wrapper
 BP(\mw).free;
 PR(\mobileWorkshopGUI) => BP(\mw);
-BP(\mw).window.close
-BP.exists(\mw)
-1+1
 
-BP.keys
-BP.exists(\mwtouch)
-BP(\mwtouch).listVars
-
-PR(\touchManager).v[\freeCleanup].def.dumpByteCodes
-BP(\mw).listVars
-BP(\mw).oscMgr.listVars
-BP(\mw).oscMgr.dump
 NotificationCenter.registrations // removed all dependencies
+
+// test mapping
+Ndef(\a).clear;
+Ndef(\a, { |freq = 440, fmul = 1.5| SinOsc.ar(freq * [1, fmul], 0, 0.1) });
+Ndef(\a).addSpec(\fmul, [1, 2, \exp]);
+Ndef(\a).play;
+Ndef(\a).stop;
+
+Ndef.all[\localhost].envir.keys
+ProxySpace
+
+m = PR(\npMapping).copy.prep;
+m.listVars;
+
+m.setTouchIndex(2);
+m.setProxyIndex(0);
+m.setParamIndex(1);
+
+m.setParamIndex(nil);
+
+m.free;
+m.dependants
+
+z = Window("test map", Rect(800, 100, 350, 100)).front;
+z.layout = VLayout();
+
+g = PR(\npMappingGui).copy.prep(m, z.layout);
+
+g.listVars
+g.view.children
+
+z.refresh
+z.view.children
+
+m.free;
+
+g.free;
