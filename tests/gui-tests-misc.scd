@@ -97,6 +97,8 @@ z.layout = VLayout();
 
 g = PR(\npMappingGui).copy.prep(m, z.layout);
 
+g.deleteButton.states_([["X", Color.black, Color.red(0.6)]]);
+
 g.listVars
 g.view.children
 

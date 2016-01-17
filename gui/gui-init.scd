@@ -46,9 +46,9 @@ Proto {
 		touchExtent = PR(\abstractTouchGUI).calcExtent(BP(~touchName).v);
 		~parentView = parentView ?? { View() };
 
-		~layout = HLayout(
+		~wrappedLayout = HLayout(
 			\randBg.eval(View()),  // padding, to center the whole VLayout horizontally
-			VLayout(
+			~layout = VLayout(
 				HLayout(
 					StaticText().string_("Local:").align_(\right).fixedSize_(Size(70, 20)),
 					~localIpView = StaticText().fixedHeight_(20),
@@ -144,12 +144,12 @@ Proto {
 	~margins = [4, 1];
 	~spacing = 4;
 
-	~prep = { |model, layout|
+	~prep = { |model, layout, addToLayout(true)|
 		~model = model;
 		~addResponder.();
 		~makeContainer.(layout);
 		~makeViews.(~layout);
-		layout.add(~view);
+		if(addToLayout) { layout.add(~view) };
 		~view.onClose = e { ~free.() };
 		currentEnvironment
 	};
@@ -426,11 +426,86 @@ PR(\abstractMappingGui).clone {
 
 // mapping editor
 Proto {
+	~prep = { |parent, bounds|
+		~parentView = parent;
+		if(parent.layout.notNil) {
+			parent.layout.add(~view = ScrollView());
+		} {
+			~view = ScrollView(parent, bounds);
+		};
+		~view.canvas = View();
+		~layout = ~makeLayout.(~view);
+		if(~layout.isKindOf(LineLayout)) {
+			~layout.add(View());  // stretchable spacer
+			~hasSpacer = true;
+		} {
+			~hasSpacer = false;
+		};
+		~makeViews.();
+		~userprep.();
+		currentEnvironment
+	};
 
+	~makeLayout = { |view|
+		view.layout = HLayout();
+		view.layout
+	};
+
+	~addView = { |view, stretch(0), align|
+		if(~hasSpacer) {
+			~layout.insert(view, ~parentView.children.size - 1, stretch, align);
+		} {
+			~layout.add(view, stretch, align);
+		};
+		currentEnvironment
+	};
+
+	~insertView = { |view, index, stretch(0), align|
+		~layout.insert(view, index, stretch, align);
+	};
+
+	~removeView = { |view|
+		// don't remove another parent's view
+		if(~parentView.children.includes(view)) { view.remove };
+	};
 } => PR(\abstractScrollParent);
 
-Proto {
+PR(\abstractScrollParent).clone {
+	~userprep = {
+		// each item is [model, gui]
+		~maps = Array.new;
+	};
 
+	~makeViews = {
+		~addView.(~addButton = PopUpMenu());
+
+		~addButton.fixedSize_(Size(150, 20))
+		.items_(["Add OSC mapping", "-- to Ndef param", "-- to Pdefn", "-- function"])
+		.action_(e { |view|
+			var map, gui;
+			switch(view.value)
+			{ 1 } {
+				map = PR(\npMapping).copy.prep;
+				gui = PR(\npMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
+				~addView.(gui.view);
+				~maps = ~maps.add([map, gui]);
+				map.addDependant(currentEnvironment);
+				view.value = 0;
+			}
+			{ "Not yet implemented".warn };
+		});
+	};
+
+	~update = { |obj, what|
+		var i;
+		if(what == \didFree) {
+			i = ~maps.detect { |pair| pair[0] === obj };
+			if(i.notNil) {
+				obj.removeDependant(currentEnvironment);
+				~maps.removeAt(i);
+			};
+		};
+	};
 } => PR(\touchMapManager);
 
 
@@ -468,6 +543,7 @@ Proto {
 		));
 		~window.layout = ~layout;
 		~oscMgr = PR(\touchManager).copy.prep(~oscMgrView, name);
+		~oscMapMgr = PR(\touchMapManager).copy.prep(~oscMgrView);
 		~window.onClose_(e { ~free.() }).front;
 		currentEnvironment
 	};
