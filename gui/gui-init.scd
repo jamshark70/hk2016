@@ -338,6 +338,7 @@ PR(\abstractMappingGui).clone {
 		layout.add(~touchMenu = PopUpMenu());
 		layout.add(~proxyMenu = PopUpMenu());
 		layout.add(~paramMenu = PopUpMenu());
+		layout.add(~deleteButton = Button());
 
 		~touchKeys = ~model.touchKeys ++ ["none"];
 		~touchMenu.items_(~touchKeys)
@@ -373,6 +374,10 @@ PR(\abstractMappingGui).clone {
 		~model.getIDs;
 		~proxyMenu.value_(~indexForItem.(~proxyKeys, ~model.proxyKey));
 		~paramMenu.value_(~indexForItem.(~paramKeys, ~model.paramKey));
+
+		~deleteButton.fixedSize_(Size(20, 20))
+		.states_([["X", Color.black, Color.red(0.6)]])
+		.action_(e { ~model.free });
 	};
 
 	~indexForItem = { |items, value|
