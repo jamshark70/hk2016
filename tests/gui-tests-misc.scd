@@ -40,6 +40,29 @@ w.background = Color.clear;
 w.background = Color.gray(0.2);
 
 
+// scrollview with layout? YEP
+w = Window("scroll layout", Rect(800, 200, 500, 400)).front;
+v = \randBg.eval(ScrollView(w, w.view.bounds.insetBy(2, 2)));
+v.canvas = View();
+v.canvas.layout = l = VLayout(View());
+
+{
+	30.do { |i|
+		var view = \randBg.eval(View())
+		.fixedHeight_(22)
+		.layout_(HLayout(
+			StaticText().string_(i.asString).fixedWidth_(30),
+			Button().states_([["click me"]])
+			.action_({ |view| "% was clicked\n".postf(i) });
+		).margins_(1));
+		l.insert(view, v.children.size - 1);
+		0.5.wait;
+	};
+}.fork(AppClock);
+
+v.children.choose.remove;
+
+
 
 // testing wrapper
 BP(\mw).free;
