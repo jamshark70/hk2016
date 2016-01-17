@@ -8,6 +8,7 @@ Library.put(\workshopGuiTheme, (
 	containerBG: Color.gray(0.2),
 ));
 
+{ |view| view.background_(Color.rand(0.1, 0.6)) } => Func(\randBg);
 
 
 /***** GUI: OSC section *****/
@@ -45,17 +46,21 @@ Proto {
 		touchExtent = PR(\abstractTouchGUI).calcExtent(BP(~touchName).v);
 		~parentView = parentView ?? { View() };
 
-		~layout = VLayout(
-			HLayout(
-				StaticText().string_("Local:").align_(\right),
-				~localIpView = StaticText()
+		~layout = HLayout(
+			\randBg.eval(View()),  // padding, to center the whole VLayout horizontally
+			VLayout(
+				HLayout(
+					StaticText().string_("Local:").align_(\right).fixedSize_(Size(70, 20)),
+					~localIpView = StaticText().fixedHeight_(20),
+				),
+				HLayout(
+					StaticText().string_("Remote:").align_(\right).fixedSize_(Size(70, 20)),
+					~remoteIpView = StaticText().fixedHeight_(20)
+				),
+				~touchParent = View().fixedSize_(touchExtent + Point(-4, 4)),
+				// other views?
 			),
-			HLayout(
-				StaticText().string_("Remote:").align_(\right),
-				~remoteIpView = StaticText()
-			),
-			~touchParent = View().fixedSize_(touchExtent + Point(-4, 4)),
-			// other views
+			\randBg.eval(View()),
 		);
 		PR(\abstractTouchGUI).chuck(BP(~touchGuiName), nil, (
 			model: BP(~touchName).v,
@@ -130,9 +135,18 @@ Proto {
 
 /***** GUI: OSC mapping section *****/
 
-// Proto {
-//
-// } => PR(\touchMapManager);
+// mapping objects
+Proto {
+
+} => PR(\abstractMapping);
+
+// NP parameter
+
+
+// mapping editor
+Proto {
+
+} => PR(\touchMapManager);
 
 
 
