@@ -68,6 +68,31 @@ v.children.choose.remove;
 BP(\mw).free;
 PR(\mobileWorkshopGUI) => BP(\mw);
 
+BP(\mw).listVars;
+BP(\mw).oscMapMgr.listVars
+BP(\mw).oscMapMgr.view.children
+BP(\mw).oscMapMgr.view.canvas.children
+
+p = BP(\mw);
+p.window.view.children;
+p.window.view.children[0].children;
+p.window.view.children[0].children.last.children;
+p.window.view.children[0].children.last
+
+p.window.view.children[0].children.last.canvas.children;
+
+a = p.window.view.children[0].children.last.children;
+a.collect(_.bounds)
+
+p.window.view.children[0].children.last.canvas.children;
+p.window.view.children[0].children.last.canvas.children[0].children;
+p.window.view.children[0].children.last.canvas.children.last.children;
+
+
+p.window.view.children[0].children.last.children[0].children;
+p.window.view.children[0].children.last.children[2].children;
+
+
 NotificationCenter.registrations // removed all dependencies
 
 // test mapping
@@ -108,3 +133,51 @@ z.view.children
 m.free;
 
 g.free;
+
+
+// can't believe this... a lower view is displaying above a higher view...?
+// but I can't reproduce it in a simple case...
+w = Window("scroll layout", Rect(800, 200, 500, 400)).front;
+v = ScrollView(w, w.view.bounds);
+v.canvas = View();
+v.canvas.layout = l = VLayout();
+l.add(PopUpMenu().items_(["no matter"]));
+w.front;
+
+l.insert(m = View().layout_(HLayout()), v.children.size - 1);
+
+m.layout.add(StaticText().string_("hi, I'm here"));
+
+
+PR(\abstractScrollParent).listMethods;
+
+w = Window("scroll layout", Rect(800, 200, 500, 400)).front;
+p = PR(\abstractScrollParent).copy.prep(w, nil, w.view.bounds.insetBy(2, 2));
+w.view.children;
+p.view.children;  // a View = spacer
+p.addView(Button().states_([["oh hai"]]));
+p.view.children;
+p.addView(Button().states_([["from da udder side"]]));
+
+w = Window("scroll layout", Rect(800, 200, 500, 400)).front;
+p = PR(\abstractScrollParent).copy.prep(w, nil, w.view.bounds.insetBy(2, 2));
+w.view.children;
+p.view.children;  // a View = spacer
+p.insertView(
+	Button().states_([["oh hai"]]).action_({
+		p.addView(Button().states_([["from da udder side"]]));
+	}),
+	0
+);
+p.view.children;
+p.insertView(Button().states_([["from da udder side"]]), 0);
+
+VLayout.browse;
+p.layout.children
+
+w = Window("layout", Rect(800, 200, 500, 400)).front;
+w.view.layout = l = VLayout(StaticText().string_("first"));
+l.insert(StaticText().string_("second"), 0);
+l.insert(StaticText().string_("third"), 1);
+l.insert(StaticText().string_("fourth"), 1);
+w.view.children.collect(_.string);

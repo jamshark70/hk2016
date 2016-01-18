@@ -66,7 +66,7 @@ Proto {
 			model: BP(~touchName).v,
 			parentView: ~touchParent
 		));
-		~parentView.layout = ~layout;
+		~parentView.layout = ~wrappedLayout;
 
 		~getLocalIP.();  // async, assumes unixy
 		~setRemoteIPResp.();
@@ -192,7 +192,7 @@ Proto {
 		if(proxySpace.notNil) {
 			~space = proxySpace
 		} {
-			if(~space.isNil) { ~space = Ndef.all[\localhost] };
+			if(~space.isNil) { ~space = Ndef.all[\localhost] ?? { ProxySpace.new } };
 		};
 		~getIDs.();
 		currentEnvironment
@@ -426,14 +426,17 @@ PR(\abstractMappingGui).clone {
 
 // mapping editor
 Proto {
-	~prep = { |parent, bounds|
+	~prep = { |parent, layout, bounds|
 		~parentView = parent;
-		if(parent.layout.notNil) {
-			parent.layout.add(~view = ScrollView());
+		if(layout.notNil) {
+			layout.add(~scrollView = ScrollView());
 		} {
-			~view = ScrollView(parent, bounds);
+			~scrollView = ScrollView(parent, bounds);
 		};
-		~view.canvas = View();
+		\randBg.eval(~scrollView);
+		~view = View();
+		\randBg.eval(~view);
+		~scrollView.canvas = ~view;
 		~layout = ~makeLayout.(~view);
 		if(~layout.isKindOf(LineLayout)) {
 			~layout.add(View());  // stretchable spacer
@@ -447,13 +450,13 @@ Proto {
 	};
 
 	~makeLayout = { |view|
-		view.layout = HLayout();
+		view.layout = VLayout();
 		view.layout
 	};
 
 	~addView = { |view, stretch(0), align|
 		if(~hasSpacer) {
-			~layout.insert(view, ~parentView.children.size - 1, stretch, align);
+			~layout.insert(view, ~view.children.size - 1, stretch, align);
 		} {
 			~layout.add(view, stretch, align);
 		};
@@ -499,7 +502,7 @@ PR(\abstractScrollParent).clone {
 	~update = { |obj, what|
 		var i;
 		if(what == \didFree) {
-			i = ~maps.detect { |pair| pair[0] === obj };
+			i = ~maps.detectIndex { |pair| pair[0] === obj };
 			if(i.notNil) {
 				obj.removeDependant(currentEnvironment);
 				~maps.removeAt(i);
@@ -543,7 +546,7 @@ Proto {
 		));
 		~window.layout = ~layout;
 		~oscMgr = PR(\touchManager).copy.prep(~oscMgrView, name);
-		~oscMapMgr = PR(\touchMapManager).copy.prep(~oscMgrView);
+		~oscMapMgr = PR(\touchMapManager).copy.prep(~oscMgrView, ~oscMgr.layout);
 		~window.onClose_(e { ~free.() }).front;
 		currentEnvironment
 	};
