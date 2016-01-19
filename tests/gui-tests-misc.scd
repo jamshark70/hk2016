@@ -181,3 +181,12 @@ l.insert(StaticText().string_("second"), 0);
 l.insert(StaticText().string_("third"), 1);
 l.insert(StaticText().string_("fourth"), 1);
 w.view.children.collect(_.string);
+
+
+
+p = ProxySpace.new.push;
+~a = { Silent.ar(1) };
+p.envir.keys
+
+~a.clear;
+p.envir.keys

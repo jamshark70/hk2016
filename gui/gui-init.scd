@@ -240,6 +240,11 @@ Proto {
 			}
 		};
 	};
+	~getProxy = {
+		if(~proxyKey.notNil) {
+			~space[~proxyKey]
+		};  // else nil
+	};
 
 	~getIDs = {
 		">> getIDs".debug;
@@ -424,6 +429,7 @@ PR(\abstractMappingGui).clone {
 } => PR(\npMappingGui);
 
 
+
 // mapping editor
 Proto {
 	~prep = { |parent, layout, bounds|
@@ -491,7 +497,7 @@ PR(\abstractScrollParent).clone {
 				map = PR(\npMapping).copy.prep;
 				gui = PR(\npMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
 				~addView.(gui.view);
-				~maps = ~maps.add([map, gui]);
+				~maps = ~maps.add((map: map, gui: gui, spec: nil.asSpec));
 				map.addDependant(currentEnvironment);
 				view.value = 0;
 			}
@@ -502,13 +508,59 @@ PR(\abstractScrollParent).clone {
 	~update = { |obj, what|
 		var i;
 		if(what == \didFree) {
-			i = ~maps.detectIndex { |pair| pair[0] === obj };
+			i = ~maps.detectIndex { |pair| pair[\map] === obj };
 			if(i.notNil) {
 				obj.removeDependant(currentEnvironment);
 				~maps.removeAt(i);
 			};
 		};
 	};
+
+	// ~checkProxies = {
+	// 	~maps.do { |map, i|
+	// 		var proxy, spec;
+	// 		map[\map].getIDs;  // brute force -- maybe optimize later
+	// 		if()
+	// 		if(proxy.notNil and: { map[\map].paramKey.notNil }) {
+	// 			spec = proxy.getSpec(map[\map].paramKey);
+	// 			if(map[\spec] != spec) {
+	// 				map[\spec] = spec;
+	// 				map[\map].register;  // also fixes display -- optimize this later
+	// 			};
+	// 		};
+	//
+	// 	};
+	// };
+
+	// ~updatePeriod = 1.0;
+	// ~startAliveThread = {
+	// 	if(~aliveThread.isNil) {
+	// 		~aliveThread = Task {
+	// 			loop {
+	// 				~checkProxies.();
+	// 				~updatePeriod.wait;
+	// 			}
+	// 		}.play(AppClock);
+	// 	};
+	// 	if(~restartFunc.isNil or: { CmdPeriod.objects.includes(~restartFunc).not }) {
+	// 		~restartFunc = e {
+	// 			if(~aliveThread.wasStopped) {
+	// 				~aliveThread = nil;
+	// 				~startAliveThread.();
+	// 			};
+	// 		};
+	// 		CmdPeriod.add(~restartFunc);
+	// 	};
+	// 	currentEnvironment
+	// };
+	//
+	// ~stopAliveThread = {
+	// 	~aliveThread.stop;
+	// 	~aliveThread = nil;
+	// 	CmdPeriod.remove(~restartFunc);
+	// 	~restartFunc = nil;
+	// 	currentEnvironment
+	// };
 } => PR(\touchMapManager);
 
 
