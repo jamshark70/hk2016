@@ -157,6 +157,8 @@ Proto {
 		~view.onClose = nil;  // avoid recursion
 		~view.remove;
 		~removeResponder.();
+		~model.free;
+		currentEnvironment
 	};
 	~addResponder = {
 		~model.addDependant(currentEnvironment);
@@ -205,7 +207,10 @@ Proto {
 
 	~unregister = {
 		~resp.remove;  // osc responses
-		BP(~touch).setValue(~touchKey, 0);
+		// this may be invoked during window close, in which case the touch object is already gone
+		if(BP.exists(~touch)) {
+			BP(~touch).setValue(~touchKey, 0);
+		};
 		currentEnvironment
 	};
 
@@ -359,12 +364,24 @@ Proto {
 	};
 
 	// respond to Ndef updates
-	~update = { |obj, what, args|  // NodeProxy .changed sends arrays of args
+	~update = { |obj, what ... args|  // NodeProxy .changed sends arrays of args
 		[obj, what, args].debug(">> npMapping update");
-		case
-		{ what == \source } {
+		switch(what)
+		{ \source } {
 			// [obj, index, channelOffset, extraArgs, now]
 			~getParams.();  // this could add new parameters
+		}
+		{ \spec } {
+			if(args[0] == ~paramKey) {
+				~spec = args[1].asSpec;
+				~register.();  // update touchGUI
+			};
+		}
+		{ \clear } {
+			// my "owner" proxy is dead. clear proxy and param keys
+			~getIDs.();  // brute force, just rebuild all the keys -- this doesn't happen often
+			~setProxyIndex.(nil);
+			~setParamIndex.(nil);
 		};
 		[obj, what, args].debug("<< npMapping update");
 		currentEnvironment
@@ -487,6 +504,7 @@ Proto {
 		~userprep.();
 		currentEnvironment
 	};
+	~free = { ~userfree.() };
 
 	~makeLayout = { |view|
 		view.layout = VLayout();
@@ -516,6 +534,16 @@ PR(\abstractScrollParent).clone {
 	~userprep = {
 		// each item is [model, gui]
 		~maps = Array.new;
+		if(~space.isNil) {
+			~space = Ndef.all[\localhost] ?? {
+				Ndef.dictFor(Server.local)
+				// ProxySpace.new
+			}
+		};
+		~startAliveThread.();
+	};
+	~userfree = {
+		~stopAliveThread.();
 	};
 
 	~makeViews = {
@@ -549,50 +577,42 @@ PR(\abstractScrollParent).clone {
 		};
 	};
 
-	// ~checkNewProxies = {
-	// 	~maps.do { |map, i|
-	// 		var proxy, spec;
-	// 		map[\map].getIDs;  // brute force -- maybe optimize later
-	// 		if()
-	// 		if(proxy.notNil and: { map[\map].paramKey.notNil }) {
-	// 			spec = proxy.getSpec(map[\map].paramKey);
-	// 			if(map[\spec] != spec) {
-	// 				map[\spec] = spec;
-	// 				map[\map].register;  // also fixes display -- optimize this later
-	// 			};
-	// 		};
-	// 	};
-	// };
+	~checkProxies = {
+		if(~prevProxyKeys != ~space.envir.keys) {
+			~prevProxyKeys = ~space.envir.keys;
+			~maps.do { |item| item[\map].getIDs };
+		};
+	};
 
-	// ~updatePeriod = 1.0;
-	// ~startAliveThread = {
-	// 	if(~aliveThread.isNil) {
-	// 		~aliveThread = Task {
-	// 			loop {
-	// 				~checkProxies.();
-	// 				~updatePeriod.wait;
-	// 			}
-	// 		}.play(AppClock);
-	// 	};
-	// 	if(~restartFunc.isNil or: { CmdPeriod.objects.includes(~restartFunc).not }) {
-	// 		~restartFunc = e {
-	// 			if(~aliveThread.wasStopped) {
-	// 				~aliveThread = nil;
-	// 				~startAliveThread.();
-	// 			};
-	// 		};
-	// 		CmdPeriod.add(~restartFunc);
-	// 	};
-	// 	currentEnvironment
-	// };
-	//
-	// ~stopAliveThread = {
-	// 	~aliveThread.stop;
-	// 	~aliveThread = nil;
-	// 	CmdPeriod.remove(~restartFunc);
-	// 	~restartFunc = nil;
-	// 	currentEnvironment
-	// };
+	~updatePeriod = 1.0;
+	~startAliveThread = {
+		if(~aliveThread.isNil) {
+			~aliveThread = Task {
+				loop {
+					~checkProxies.();
+					~updatePeriod.wait;
+				}
+			}.play(AppClock);
+		};
+		if(~restartFunc.isNil or: { CmdPeriod.objects.includes(~restartFunc).not }) {
+			~restartFunc = e {
+				if(~aliveThread.wasStopped) {
+					~aliveThread = nil;
+					~startAliveThread.();
+				};
+			};
+			CmdPeriod.add(~restartFunc);
+		};
+		currentEnvironment
+	};
+
+	~stopAliveThread = {
+		~aliveThread.stop;
+		~aliveThread = nil;
+		CmdPeriod.remove(~restartFunc);
+		~restartFunc = nil;
+		currentEnvironment
+	};
 } => PR(\touchMapManager);
 
 
@@ -617,6 +637,7 @@ PR(\abstractScrollParent).clone {
 
 Proto {
 	~bounds = { Rect.aboutPoint(Window.screenBounds.center, 400, 300) };
+	~space = nil;
 
 	// init:
 	~prep = { |name(~collIndex)|
@@ -630,11 +651,14 @@ Proto {
 		));
 		~window.layout = ~layout;
 		~oscMgr = PR(\touchManager).copy.prep(~oscMgrView, name);
-		~oscMapMgr = PR(\touchMapManager).copy.prep(~oscMgrView, ~oscMgr.layout);
+		~oscMapMgr = PR(\touchMapManager).copy
+		.put(\space, ~space)
+		.prep(~oscMgrView, ~oscMgr.layout);
 		~window.onClose_(e { ~free.() }).front;
 		currentEnvironment
 	};
 	~free = {
+		~oscMapMgr.free; ~oscMapMgr = nil;
 		~oscMgr.free; ~oscMgr = nil;
 		// free others
 		if(~window.isClosed.not) {

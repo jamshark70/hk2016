@@ -102,7 +102,16 @@ Ndef(\a).addSpec(\fmul, [1, 2, \exp]);
 Ndef(\a).play;
 Ndef(\a).stop;
 
+Ndef(\a).addSpec(\freq, #[100, 800, \exp]);
+Ndef(\a).getSpec(\freq)
+
+Ndef(\a).getSpec(\fmul)
+
+Halo.at(Ndef(\a))
+
 Ndef.all[\localhost].envir.keys
+BP(\mw).oscMapMgr.space.envir.keys == BP(\mw).oscMapMgr.prevProxyKeys
+
 ProxySpace
 
 m = PR(\npMapping).copy.prep;
@@ -192,6 +201,30 @@ p.envir.keys
 p.envir.keys
 
 
+// structural changes of NP on clear, end, free
+// end and free do not destroy the structure; so, keep them in the GUI
+Ndef(\a, { |abc = 1| Silent.ar(1) });
+[Ndef(\a).isPlaying, Ndef(\a).rate, Ndef(\a).numChannels, Ndef(\a).nodeMap]
+
+Ndef(\a).clear;
+[Ndef(\a).isPlaying, Ndef(\a).rate, Ndef(\a).numChannels, Ndef(\a).nodeMap]  // scalar, nil, empty node map
+
+Ndef(\a).end;
+[Ndef(\a).isPlaying, Ndef(\a).rate, Ndef(\a).numChannels, Ndef(\a).nodeMap]  // audio, 1, full map
+
+Ndef(\a).free;
+[Ndef(\a).isPlaying, Ndef(\a).rate, Ndef(\a).numChannels, Ndef(\a).nodeMap]  // audio, 1, full map
+
+Ndef(\a).set(\abc, 2);
+
+
+// not freeing on window close?
+w = Window(\test, Rect(800, 200, 200, 150)).front;
+w.view.layout = VLayout(
+	View().background_(Color.gray(0.5)).onClose_({ "closed".postln })
+);
+
+
 
 // check dependencies
 BP(\mw).oscMapMgr.maps[0].map.listVars
@@ -207,3 +240,7 @@ Ndef(\a, { |freq = 440, fmul = 1.5, amp = 0.1| SinOsc.ar(freq * [1, fmul], 0, am
 Ndef(\a).addSpec(\fmul, [1, 2, \exp]);
 
 Ndef(\a).proxyspace.clear;
+
+
+// keys not found?
+BP(\mw).oscMapMgr.listVars
