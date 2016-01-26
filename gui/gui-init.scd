@@ -198,12 +198,13 @@ Proto {
 		currentEnvironment
 	};
 	~free = {
+		~clearDependant.();
 		~unregister.();
 		currentEnvironment.changed(\didFree);
 	};
 
 	~unregister = {
-		~resp.remove;
+		~resp.remove;  // osc responses
 		BP(~touch).setValue(~touchKey, 0);
 		currentEnvironment
 	};
@@ -227,6 +228,20 @@ Proto {
 		};
 		currentEnvironment
 	};
+	~setDependant = {
+		if(~proxyKey.notNil and: { ~space[~proxyKey].notNil }) {
+			~space[~proxyKey].addDependant(currentEnvironment)
+		};
+		currentEnvironment
+	};
+	~clearDependant = {
+		if(~proxyKey.notNil and: { ~space[~proxyKey].notNil }) {
+			~space[~proxyKey].removeDependant(currentEnvironment)
+		};
+		currentEnvironment
+	};
+
+
 	~getParamValue = {
 		var proxy, pairs;
 		proxy = ~space[~proxyKey];
@@ -249,12 +264,15 @@ Proto {
 	~getIDs = {
 		">> getIDs".debug;
 		~touchKeys = BP(~touch).saveKeys.as(Array).sort;
-		~proxyKeys = ~space.envir.keys.as(Array).sort;
-		currentEnvironment.changed(\proxyKeys, ~proxyKeys.debug("proxyKeys notification"));
+		~setProxyKeys.(~space.envir.keys.as(Array).sort);
 		~getParams.();
 		"<< getIDs".debug;
 		// ~setProxyIndex.(0);
 		// ~setTouchIndex.(0);
+	};
+	~setProxyKeys = { |keys|
+		~proxyKeys = keys;
+		currentEnvironment.changed(\proxyKeys, keys.debug("proxyKeys notification"));
 	};
 
 	~setTouchIndex = { |i|
@@ -279,9 +297,11 @@ Proto {
 		var oldKey = ~proxyKey;
 		if(i.notNil) {
 			if(~proxyKeys[i].notNil) {
+				~clearDependant.();
 				~proxyKey = ~proxyKeys[i];
 				currentEnvironment.changed(\proxyKey, i);
 				if(oldKey != ~proxyKey) {
+					~setDependant.();
 					~getParams.();
 					~setParamIndex.(nil);
 				} /*{
@@ -291,6 +311,7 @@ Proto {
 				"No proxy for %".format(i).warn;
 			};
 		} {
+			~clearDependant.();
 			~unregister.();
 			~proxyKey = nil;
 			currentEnvironment.changed(\proxyKey, nil);
@@ -334,6 +355,18 @@ Proto {
 			~paramKey = nil;
 			currentEnvironment.changed(\paramKey, nil);
 		};
+		currentEnvironment
+	};
+
+	// respond to Ndef updates
+	~update = { |obj, what, args|  // NodeProxy .changed sends arrays of args
+		[obj, what, args].debug(">> npMapping update");
+		case
+		{ what == \source } {
+			// [obj, index, channelOffset, extraArgs, now]
+			~getParams.();  // this could add new parameters
+		};
+		[obj, what, args].debug("<< npMapping update");
 		currentEnvironment
 	};
 } => PR(\npMapping);
@@ -516,7 +549,7 @@ PR(\abstractScrollParent).clone {
 		};
 	};
 
-	// ~checkProxies = {
+	// ~checkNewProxies = {
 	// 	~maps.do { |map, i|
 	// 		var proxy, spec;
 	// 		map[\map].getIDs;  // brute force -- maybe optimize later
@@ -528,7 +561,6 @@ PR(\abstractScrollParent).clone {
 	// 				map[\map].register;  // also fixes display -- optimize this later
 	// 			};
 	// 		};
-	//
 	// 	};
 	// };
 

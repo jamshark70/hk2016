@@ -190,3 +190,20 @@ p.envir.keys
 
 ~a.clear;
 p.envir.keys
+
+
+
+// check dependencies
+BP(\mw).oscMapMgr.maps[0].map.listVars
+Object.dependantsDictionary.detect { |obj| obj.debug === BP(\mw).oscMapMgr.maps[0].map };
+Ndef(\a).dependants.select(_.isKindOf(Proto)).do(_.listVars)
+
+p = Ndef(\a).proxyspace;
+Ndef(\a).free;
+p
+Ndef(\a).clear;
+
+Ndef(\a, { |freq = 440, fmul = 1.5, amp = 0.1| SinOsc.ar(freq * [1, fmul], 0, amp) });
+Ndef(\a).addSpec(\fmul, [1, 2, \exp]);
+
+Ndef(\a).proxyspace.clear;
