@@ -273,11 +273,31 @@ Proto {
 		'/accxyz Z': { |value| ~multiCache['/accxyz'] = value; value[2] }
 	);
 	~packers = (
-		'/1/xy X': { |value| ~multiCache['/1/xy'] = ~multiCache['/1/xy'].copy.put(0, value) },
-		'/1/xy Y': { |value| ~multiCache['/1/xy'] = ~multiCache['/1/xy'].copy.put(1, value) },
-		'/accxyz X': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(0, value) },
-		'/accxyz Y': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(1, value) },
-		'/accxyz Z': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(2, value) }
+		'/1/xy X': { |value|
+			var new = ~multiCache['/1/xy'].copy.put(0, value);
+			~multiCache['/1/xy'] = new;
+			new
+		},
+		'/1/xy Y': { |value|
+			var new = ~multiCache['/1/xy'].copy.put(1, value);
+			~multiCache['/1/xy'] = new;
+			new
+		},
+		'/accxyz X': { |value|
+			var new = ~multiCache['/accxyz'].copy.put(0, value);
+			~multiCache['/accxyz'] = new;
+			new
+		},
+		'/accxyz Y': { |value|
+			var new = ~multiCache['/accxyz'].copy.put(1, value);
+			~multiCache['/accxyz'] = new;
+			new
+		},
+		'/accxyz Z': { |value|
+			var new = ~multiCache['/accxyz'].copy.put(2, value);
+			~multiCache['/accxyz'] = new;
+			new
+		}
 	);
 	~setTouchValue = { |value|
 		var key;
