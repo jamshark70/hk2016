@@ -30,12 +30,14 @@ Library.put(\workshopGuiTheme, (
 
 Proto {
 	~iMadeTouch = false;
+	~iMadeXyz = false;
 
 	~prep = { |parentView, name|
 		var touchExtent;
 
 		~touchName = (name ++ "touch").asSymbol;
 		~touchGuiName = (name ++ "touchGui").asSymbol;
+		~xyzName = (name ++ "xyz").asSymbol;
 		if(BP.exists(~touchGuiName)) { BP(~touchGuiName).free };
 
 		if(BP.exists(~touchName).not) {
@@ -44,6 +46,10 @@ Proto {
 				pingDebug: false
 			));
 			~iMadeTouch = true;
+		};
+		if(BP.exists(~xyzName).not) {
+			PR(\accxyzSmoother).chuck(BP(~xyzName), nil, (sourceBP: ~touchName));
+			~iMadeXyz = true;
 		};
 
 		touchExtent = PR(\abstractTouchGUI).calcExtent(BP(~touchName).v);
@@ -79,6 +85,7 @@ Proto {
 	~free = {
 		~freeRemoteIPResp.();
 		BP(~touchGuiName).free;
+		if(~iMadeXyz) { BP(~xyzName).free };
 		if(~iMadeTouch) { BP(~touchName).free };
 		// remove other views?
 	};
@@ -189,6 +196,7 @@ Proto {
 // NP parameter
 Proto {
 	~touch = \mwtouch;  // replace
+	~xyzSmoother = \mwxyz;
 	// ~space = Ndef.all[\localhost];
 	~spec = #[0, 1].asSpec;
 
@@ -226,7 +234,7 @@ Proto {
 			if(proxy.notNil) {
 				if(~touchThing.isKindOf(Association)) {
 					~resp = NotificationCenter.register(
-						BP(~touch).v, ~touchThing.key, UniqueID.next, e { |args|
+						BP(~sourceForPath.(~touchKey)).v, ~touchThing.key, UniqueID.next, e { |args|
 							proxy.set(~paramKey,
 								~spec.map(~unpackers[~touchKey].value(args[1..]))
 							);
@@ -446,6 +454,13 @@ Proto {
 		};
 	};
 
+	~sourceForPath = { |path|
+		if(path.asString.contains("acc")) {
+			~xyzSmoother
+		} {
+			~touch
+		};
+	};
 } => PR(\npMapping);
 
 PR(\abstractMappingGui).clone {

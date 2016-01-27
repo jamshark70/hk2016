@@ -279,6 +279,8 @@ Ndef(\a).addSpec(\trigRate, [2, 18, \exp]);
 Ndef(\a).play;
 Ndef(\a).stop;
 
+Ndef(\a).set(\freq, 200);
+Ndef(\a).nodeMap[\trigRate]
 
 // accxyz
 NotificationCenter.register(BP(\mwtouch).v, '/accxyz', \tester, { |... args| args.postln });
@@ -289,5 +291,5 @@ PR(\accxyzSmoother).chuck(BP(\xyz), nil, (sourceBP: \mwtouch));
 
 BP(\xyz).listVars
 
-NotificationCenter.register(BP(\xyz).v, '/accxyz', \tester, { |... args| args.postln });
-NotificationCenter.unregister(BP(\xyz).v, '/accxyz', \tester);
+NotificationCenter.register(BP(\mwxyz).v, '/accxyz', \tester, { |... args| args.postln });
+NotificationCenter.unregister(BP(\mwxyz).v, '/accxyz', \tester);
