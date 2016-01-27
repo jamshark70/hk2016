@@ -253,3 +253,41 @@ Ndef(\a).proxyspace.clear;
 
 // keys not found?
 BP(\mw).oscMapMgr.listVars
+
+
+// xy
+NotificationCenter.register(BP(\mwtouch).v, '/1/xy', \tester, { |... args| args.postln });
+NotificationCenter.unregister(BP(\mwtouch).v, '/1/xy', \tester);
+
+BP(\mw).oscMapMgr.listVars
+BP(\mw).oscMapMgr.maps[0].map.listVars
+
+BP(\mw).oscMapMgr.maps[0][\gui].listVars
+BP(\mw).oscMapMgr.maps[0][\gui].paramMenu.value
+
+NotificationCenter.registrations
+
+Ndef(\a, { |freq = 440, trigRate = 5, amp = 0.1|
+	var eg = EnvGen.kr(
+		Env.perc(0.01, trigRate.reciprocal),
+		Impulse.kr(trigRate)
+	),
+	sig = SinOsc.ar(freq) * eg * amp;
+	sig.dup
+});
+Ndef(\a).addSpec(\trigRate, [2, 18, \exp]);
+Ndef(\a).play;
+Ndef(\a).stop;
+
+
+// accxyz
+NotificationCenter.register(BP(\mwtouch).v, '/accxyz', \tester, { |... args| args.postln });
+NotificationCenter.unregister(BP(\mwtouch).v, '/accxyz', \tester);
+
+BP(\xyz).free;
+PR(\accxyzSmoother).chuck(BP(\xyz), nil, (sourceBP: \mwtouch));
+
+BP(\xyz).listVars
+
+NotificationCenter.register(BP(\xyz).v, '/accxyz', \tester, { |... args| args.postln });
+NotificationCenter.unregister(BP(\xyz).v, '/accxyz', \tester);

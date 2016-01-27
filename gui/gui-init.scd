@@ -199,6 +199,7 @@ Proto {
 		} {
 			if(~space.isNil) { ~space = Ndef.all[\localhost] ?? { ProxySpace.new } };
 		};
+		~multiCache = ~multiCache.deepCopy;
 		~getIDs.();
 		currentEnvironment
 	};
@@ -223,15 +224,24 @@ Proto {
 		if(~touchKey.notNil and: { ~proxyKey.notNil and: { ~paramKey.notNil } }) {
 			proxy = ~space[~proxyKey];
 			if(proxy.notNil) {
-				~resp = NotificationCenter.register(BP(~touch).v, ~touchKey, UniqueID.next, e { |args|
-					proxy.set(~paramKey, ~spec.map(args[1]));
-				});
-				value = ~getParamValue.(proxy);
-				if(value.notNil) {
-					BP(~touch).viewChanged(~touchKey, ~spec.unmap(value));
+				if(~touchThing.isKindOf(Association)) {
+					~resp = NotificationCenter.register(
+						BP(~touch).v, ~touchThing.key, UniqueID.next, e { |args|
+							proxy.set(~paramKey,
+								~spec.map(~unpackers[~touchKey].value(args[1..]))
+							);
+						}
+					);
 				} {
-					BP(~touch).viewChanged(~touchKey, 0);
+					~resp = NotificationCenter.register(
+						BP(~touch).v, ~touchKey, UniqueID.next,
+						e { |args|
+							proxy.set(~paramKey, ~spec.map(args[1]));
+						}
+					);
 				};
+				value = ~getParamValue.(proxy);
+				~setTouchValue.(value);
 			};
 		};
 		currentEnvironment
@@ -271,7 +281,19 @@ Proto {
 
 	~getIDs = {
 		">> getIDs".debug;
-		~touchKeys = BP(~touch).saveKeys.as(Array).sort;
+		if(~touchKeys.isNil) {
+			~touchThings = BP(~touch).saveKeys.as(Array);
+			// HACK
+			~touchThings.remove('/1/xy');
+			~touchThings = ~touchThings
+			.add('/1/xy' -> '/1/xy X')
+			.add('/1/xy' -> '/1/xy Y')
+			.add('/accxyz' -> '/accxyz X')
+			.add('/accxyz' -> '/accxyz Y')
+			.add('/accxyz' -> '/accxyz Z')
+			.sort { |a, b| a.value < b.value };
+			~touchKeys = ~touchThings.collect(_.value);
+		};
 		~setProxyKeys.(~space.envir.keys.as(Array).sort);
 		~getParams.();
 		"<< getIDs".debug;
@@ -287,6 +309,7 @@ Proto {
 		if(i.notNil) {
 			if(~touchKeys[i].notNil) {
 				~unregister.();
+				~touchThing = ~touchThings[i];
 				~touchKey = ~touchKeys[i];
 				~register.();
 				currentEnvironment.changed(\touchKey, i);
@@ -295,6 +318,7 @@ Proto {
 			};
 		} {
 			~unregister.();
+			~touchThing = nil;
 			~touchKey = nil;
 			currentEnvironment.changed(\touchKey, nil);
 		};
@@ -389,6 +413,39 @@ Proto {
 		// [obj, what, args].debug("<< npMapping update");
 		currentEnvironment
 	};
+
+	// data massage for multi-value parms
+	~multiCache = ('/1/xy': [0, 0], '/accxyz': [0, 0, 0]);
+	~unpackers = (
+		'/1/xy X': { |value| ~multiCache['/1/xy'] = value; value[0] },
+		'/1/xy Y': { |value| ~multiCache['/1/xy'] = value; value[1] },
+		'/accxyz X': { |value| ~multiCache['/accxyz'] = value; value[0] },
+		'/accxyz Y': { |value| ~multiCache['/accxyz'] = value; value[1] },
+		'/accxyz Z': { |value| ~multiCache['/accxyz'] = value; value[2] }
+	);
+	~packers = (
+		'/1/xy X': { |value| ~multiCache['/1/xy'] = ~multiCache['/1/xy'].copy.put(0, value) },
+		'/1/xy Y': { |value| ~multiCache['/1/xy'] = ~multiCache['/1/xy'].copy.put(1, value) },
+		'/accxyz X': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(0, value) },
+		'/accxyz Y': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(1, value) },
+		'/accxyz Z': { |value| ~multiCache['/accxyz'] = ~multiCache['/accxyz'].copy.put(2, value) }
+	);
+	~setTouchValue = { |value|
+		var key;
+		value = ~spec.unmap(value);
+		if(~touchThing.isKindOf(Association)) {
+			key = ~touchThing.key;  // OSC key
+			value = ~packers[~touchKey].value(value);
+		} {
+			key = ~touchKey;
+		};
+		if(value.notNil) {
+			BP(~touch).viewChanged(~touchKey, value);
+		} {
+			BP(~touch).viewChanged(~touchKey, 0);
+		};
+	};
+
 } => PR(\npMapping);
 
 PR(\abstractMappingGui).clone {
