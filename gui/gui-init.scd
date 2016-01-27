@@ -39,7 +39,10 @@ Proto {
 		if(BP.exists(~touchGuiName)) { BP(~touchGuiName).free };
 
 		if(BP.exists(~touchName).not) {
-			PR(\mix16Touch).chuck(BP(~touchName), nil, (pingDebug: false));
+			PR(\mix16Touch).chuck(BP(~touchName), nil, (
+				tabSpecs: PR(\mix16Touch).v[\tabSpecs].keep(4),
+				pingDebug: false
+			));
 			~iMadeTouch = true;
 		};
 
@@ -225,9 +228,9 @@ Proto {
 				});
 				value = ~getParamValue.(proxy);
 				if(value.notNil) {
-					BP(~touch).setValue(~touchKey, ~spec.unmap(value));
+					BP(~touch).viewChanged(~touchKey, ~spec.unmap(value));
 				} {
-					BP(~touch).setValue(~touchKey, 0);
+					BP(~touch).viewChanged(~touchKey, 0);
 				};
 			};
 		};
@@ -365,7 +368,7 @@ Proto {
 
 	// respond to Ndef updates
 	~update = { |obj, what ... args|  // NodeProxy .changed sends arrays of args
-		[obj, what, args].debug(">> npMapping update");
+		// [obj, what, args].debug(">> npMapping update");
 		switch(what)
 		{ \source } {
 			// [obj, index, channelOffset, extraArgs, now]
@@ -383,7 +386,7 @@ Proto {
 			~setProxyIndex.(nil);
 			~setParamIndex.(nil);
 		};
-		[obj, what, args].debug("<< npMapping update");
+		// [obj, what, args].debug("<< npMapping update");
 		currentEnvironment
 	};
 } => PR(\npMapping);
@@ -468,6 +471,7 @@ PR(\abstractMappingGui).clone {
 				oldItem = ~paramMenu.items[~paramMenu.value];
 				~paramKeys = args[0] ++ ["none"];
 				~paramMenu.items = ~paramKeys;
+				~paramMenu.items.debug("getting items from menu");
 				~paramMenu.value = ~indexForItem.(~paramKeys, oldItem);
 			})
 		}

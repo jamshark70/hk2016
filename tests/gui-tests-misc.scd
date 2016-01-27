@@ -63,6 +63,15 @@ v.canvas.layout = l = VLayout(View());
 v.children.choose.remove;
 
 
+// fader4's spec is wrong??
+BP(\mwtouch).listVars
+BP(\mwtouch).tabSpecs[1].indexOf('/1/fader4')
+BP(\mwtouch).tabSpecs[1][23]
+BP.keys
+
+BP(\mwtouchGui).listVars
+BP(\mwtouchGui).views['/1/fader4']
+
 
 // testing wrapper
 BP(\mw).free;
