@@ -1,3 +1,8 @@
+// testing wrapper
+BP(\mw).free;
+PR(\mobileWorkshopGUI) => BP(\mw);
+
+
 w.view.children
 
 // layout + FlowLayout?
@@ -73,9 +78,6 @@ BP(\mwtouchGui).listVars
 BP(\mwtouchGui).views['/1/fader4']
 
 
-// testing wrapper
-BP(\mw).free;
-PR(\mobileWorkshopGUI) => BP(\mw);
 
 BP(\mw).listVars;
 BP(\mw).oscMapMgr.listVars
