@@ -231,8 +231,8 @@ Proto {
 		}
 		{ \touchKey } {
 			defer(e { ~touchMenu.value = args[0] ?? { ~touchKeys.size - 1 } });
-		}
-		{ ~userUpdate.(obj, what, *args) };  // default case, pass down
+		};
+		~userUpdate.(obj, what, *args);  // always pass down
 		[obj, what, args].debug("<< update");
 	};
 } => PR(\abstractMappingGui);
@@ -241,12 +241,14 @@ Proto {
 Proto {
 	~touch = \mwtouch;  // replace
 	~xyzSmoother = \mwxyz;
+	~spec = #[0, 1].asSpec;
 
 	~prep = {
 		// if(touchKey.notNil) { ~touch = touchKey };
 		~multiCache = ~multiCache.deepCopy;
 		~getTouchIDs.();
 		~userprep.();
+		currentEnvironment
 	};
 
 	~getTouchIDs = {
@@ -285,24 +287,44 @@ Proto {
 	~register = {
 		var proxy, value;
 		~resp.remove;
-		if(~touchKey.notNil and: { ~proxyKey.notNil and: { ~paramKey.notNil } }) {
-			proxy = ~space[~proxyKey];
-			if(proxy.notNil) {
-				if(~touchThing.isKindOf(Association)) {
-					~resp = NotificationCenter.register(
-						BP(~sourceForPath.(~touchKey)).v, ~touchThing.key, UniqueID.next, e { |args|
-							~action.(~unpackers[~touchKey].value(args[1..]));
-						}
-					);
-				} {
-					~resp = NotificationCenter.register(
-						BP(~touch).v, ~touchKey, UniqueID.next, e { |args|
-							~action.(args[1]);
-						}
-					);
-				};
+		if(~touchKey.notNil and: { ~userCanRegister.() }) {
+			if(~touchThing.isKindOf(Association)) {
+				~resp = NotificationCenter.register(
+					BP(~sourceForPath.(~touchKey)).v, ~touchThing.key, UniqueID.next, e { |args|
+						~action.(~unpackers[~touchKey].value(args[1..]));
+					}
+				);
+			} {
+				~resp = NotificationCenter.register(
+					BP(~touch).v, ~touchKey, UniqueID.next, e { |args|
+						~action.(args[1]);
+					}
+				);
+				~resp.dump;
 			};
 			~userRegister.();
+		};
+		"<< register".debug;
+		currentEnvironment
+	};
+	~userCanRegister = true;
+
+	~setTouchIndex = { |i|
+		if(i.notNil) {
+			if(~touchKeys[i].notNil) {
+				~unregister.();
+				~touchThing = ~touchThings[i];
+				~touchKey = ~touchKeys[i];
+				~register.();
+				currentEnvironment.changed(\touchKey, i);
+			} {
+				"No touchKey for %".format(i).warn;
+			};
+		} {
+			~unregister.();
+			~touchThing = nil;
+			~touchKey = nil;
+			currentEnvironment.changed(\touchKey, nil);
 		};
 		currentEnvironment
 	};
@@ -370,8 +392,6 @@ Proto {
 
 PR(\abstractOSCMapping).clone {
 	// ~space = Ndef.all[\localhost];
-	~spec = #[0, 1].asSpec;
-
 	~userprep = {
 		if(~space.isNil) { ~space = Ndef.all[\localhost] ?? { ProxySpace.new } };
 		~getIDs.();
@@ -399,6 +419,14 @@ PR(\abstractOSCMapping).clone {
 		if(proxy.notNil) {
 			proxy.set(~paramKey, ~spec.map(value));
 		};
+	};
+
+	~userCanRegister = {
+		~proxyKey.notNil and: {
+			~paramKey.notNil and: {
+				~space[~proxyKey].notNil
+			}
+		}
 	};
 	~userRegister = {
 		var proxy = ~getProxy.(), value;
@@ -439,26 +467,6 @@ PR(\abstractOSCMapping).clone {
 	~setProxyKeys = { |keys|
 		~proxyKeys = keys;
 		currentEnvironment.changed(\proxyKeys, keys.debug("proxyKeys notification"));
-	};
-
-	~setTouchIndex = { |i|
-		if(i.notNil) {
-			if(~touchKeys[i].notNil) {
-				~unregister.();
-				~touchThing = ~touchThings[i];
-				~touchKey = ~touchKeys[i];
-				~register.();
-				currentEnvironment.changed(\touchKey, i);
-			} {
-				"No touchKey for %".format(i).warn;
-			};
-		} {
-			~unregister.();
-			~touchThing = nil;
-			~touchKey = nil;
-			currentEnvironment.changed(\touchKey, nil);
-		};
-		currentEnvironment
 	};
 
 	~setProxyIndex = { |i|
@@ -669,7 +677,6 @@ Proto {
 
 PR(\abstractScrollParent).clone {
 	~userprep = {
-		// each item is [model, gui]
 		~maps = Array.new;
 		if(~space.isNil) {
 			~space = Ndef.all[\localhost] ?? {
@@ -694,12 +701,14 @@ PR(\abstractScrollParent).clone {
 			{ 1 } {
 				map = PR(\npMapping).copy.prep;
 				gui = PR(\npMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
+			}
+			{ "Not yet implemented".warn };
+			if(map.notNil) {
 				~addView.(gui.view);
 				~maps = ~maps.add((map: map, gui: gui, spec: nil.asSpec));
 				map.addDependant(currentEnvironment);
 				view.value = 0;
-			}
-			{ "Not yet implemented".warn };
+			};
 		});
 	};
 
