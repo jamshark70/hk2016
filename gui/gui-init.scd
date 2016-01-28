@@ -384,9 +384,23 @@ Proto {
 			~touch
 		};
 	};
+
+	~restoreState = { |touchKey ... args|
+		var i = ~touchKeys.detectIndex { |item| item == touchKey };
+		if(i.isNil) {
+			"touchKey % not found".format(touchKey).warn;
+		};
+		~setTouchIndex.(i);
+		~userRestore.(*args);
+		currentEnvironment
+	};
+	~saveState = {
+		([~mapType, ~touchKey] ++ ~userSaveParams.()).asCompileString;
+	};
 } => PR(\abstractOSCMapping);
 
 PR(\abstractOSCMapping).clone {
+	~mapType = \npMapping;
 	// ~space = Ndef.all[\localhost];
 	~userprep = {
 		if(~space.isNil) { ~space = Ndef.all[\localhost] ?? { ProxySpace.new } };
@@ -548,6 +562,19 @@ PR(\abstractOSCMapping).clone {
 		currentEnvironment
 	};
 
+	~userRestore = { |proxyKey, paramKey|
+		var i = ~proxyKeys.detectIndex { |item| item == proxyKey };
+		if(i.isNil) {
+			"Proxy % not found".format(proxyKey).warn;
+		};
+		~setProxyIndex.(i);
+		i = ~paramKeys.detectIndex { |item| item == paramKey };
+		if(i.isNil) {
+			"Parameter % not found in proxy %".format(paramKey, proxyKey).warn;
+		};
+		~setParamIndex.(i);
+	};
+	~userSaveParams = { [~proxyKey, ~paramKey] };
 } => PR(\npMapping);
 
 PR(\abstractMappingGui).clone {
@@ -612,6 +639,7 @@ PR(\abstractMappingGui).clone {
 
 // function mapping
 PR(\abstractOSCMapping).clone {
+	~mapType = \funcMapping;
 	~initString = "{ |value| ... }";
 	~userprep = {
 		~oldString = ~initString;
@@ -638,6 +666,11 @@ PR(\abstractOSCMapping).clone {
 	};
 
 	~getIDs = 0;  // not used
+
+	~userRestore = { |string|
+		~string_.(string.replace("##newline##", "\n"));
+	};
+	~userSaveParams = { [~string.replace("\n", "##newline##")] };
 } => PR(\funcMapping);
 
 
@@ -893,30 +926,53 @@ PR(\abstractScrollParent).clone {
 		~maps.copy.do { |map| map.map.free };
 	};
 
+	~margins = #[4, 1];
+	~spacing = 4;
 	~makeViews = {
-		~addView.(~addButton = PopUpMenu());
+		var layout;
+		~addView.(~menuRow = View().fixedHeight_(22));
+		~menuRow.layout = layout = HLayout(
+			~addButton = PopUpMenu(),
+			~saveButton = Button(),
+			~loadButton = Button(),
+			nil  // spacer
+		).margins_(~margins).spacing_(~spacing);
 
-		~addButton.fixedSize_(Size(150, 20))
+		~addButton.maxWidth_(150) // .fixedSize_(Size(150, 20))
 		.items_(["Add OSC mapping", "-- to Ndef param", "-- to Pdefn", "-- function"])
 		.action_(e { |view|
 			var map, gui;
 			switch(view.value)
 			{ 1 } {
-				map = PR(\npMapping).copy.prep;
-				gui = PR(\npMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
+				~newMap.(\npMapping, \npMappingGui);
 			}
 			{ 3 } {
-				map = PR(\funcMapping).copy.prep;
-				gui = PR(\funcMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
+				~newMap.(\funcMapping, \funcMappingGui);
 			}
 			{ "Not yet implemented".warn };
-			if(map.notNil) {
-				~addView.(gui.view);
-				~maps = ~maps.add((map: map, gui: gui, spec: nil.asSpec));
-				map.addDependant(currentEnvironment);
-				view.value = 0;
-			};
+			view.value = 0;
 		});
+
+		~saveButton.maxWidth_(150)
+		.states_([["Save maps"]])
+		.action_(e { ~saveDialog.() });
+
+		~loadButton.maxWidth_(150)
+		.states_([["Load maps"]])
+		.action_(e { ~loadDialog.() });
+	};
+
+	~newMap = { |mapKey, guiKey|
+		var map, gui;
+		if(guiKey.isNil) { guiKey = (mapKey ++ "Gui").asSymbol };
+		map = PR(mapKey).copy.prep;
+		gui = PR(guiKey).copy.prep(map, ~layout, false);  // don't add to layout!
+		if(map.notNil) {
+			~addView.(gui.view);
+			~maps = ~maps.add((map: map, gui: gui, spec: nil.asSpec));
+			map.addDependant(currentEnvironment);
+			~maps.last;
+		} { nil }
 	};
 
 	~update = { |obj, what|
@@ -965,6 +1021,63 @@ PR(\abstractScrollParent).clone {
 		CmdPeriod.remove(~restartFunc);
 		~restartFunc = nil;
 		currentEnvironment
+	};
+
+	~saveDialog = {
+		Dialog.savePanel(e { |path| ~saveToFile.(path) });
+	};
+	~loadDialog = {
+		Dialog.openPanel(e { |path| ~loadFromFile.(path) });
+	};
+
+	~saveToFile = { |path, errAction|
+		var file = File(path, "w"), errCode = \ok;
+		if(file.isOpen) {
+			protect {
+				~maps.do { |map|
+					file << map.map.saveState << "\n";
+				};
+			} { |error|
+				file.close;
+				if(error.notNil) { errAction.(\saveError) };
+			};
+		} {
+			"Could not open '%' for writing".format(path).warn;
+			errCode = \fileOpenError;
+		};
+		errAction.(errCode);
+		errCode
+	};
+	~loadFromFile = { |path, errAction|
+		var file, line, states, errCode = \pending;
+		file = File(path, "r");
+		if(file.isOpen) {
+			protect {
+				states = Array.new;
+				while { (line = file.getLine(2048)).notNil } {
+					states = states.add(line.interpret);
+				};
+			} { |error|
+				file.close;
+				if(error.notNil) { errAction.(\readError) };
+			};
+			~maps.copy.do { |map| map.map.free };
+			~maps = Array.new;
+			{
+				0.1.wait;
+				states.do { |state| ~newMap.(state[0]) };
+				0.1.wait;
+				states.do { |state, i|
+					~maps[i].map.restoreState(*state[1..]);
+				};
+				errAction.(\ok);
+			}.fork(AppClock);
+		} {
+			"Could not open '%' for writing".format(path).warn;
+			errCode = \fileOpenError;
+		};
+		errAction.(errCode);
+		errCode
 	};
 } => PR(\touchMapManager);
 

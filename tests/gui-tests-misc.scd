@@ -331,3 +331,18 @@ Ndef(\pan, { |pan| Pan2.ar(SinOsc.ar(440, 0, 0.1), pan) });
 Ndef(\pan).play;
 Ndef(\pan).stop;
 Ndef(\pan).clear;
+
+
+// programmating state setting
+BP(\mw).oscMapMgr.maps[0].map.listMethods
+
+BP(\mw).oscMapMgr.maps[0].map.restoreState('/1/fader1', \pan, \pan);
+
+BP(\mw).oscMapMgr.maps[1].map.restoreState('/1/toggle1', "{ |value| if(value > 0) { Ndef(\\pan).play } { Ndef(\\pan).stop } }");
+
+BP(\mw).oscMapMgr.maps[0].map.saveState
+BP(\mw).oscMapMgr.maps[1].map.saveState
+
+BP(\mw).oscMapMgr.maps.do { |map| map.map.saveState.postln }; ""
+
+{ Ndef(\pan).play }.asCompileString.asCompileString
