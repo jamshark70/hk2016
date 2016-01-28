@@ -183,6 +183,29 @@ Proto {
 		~layout = ~makeLayout.(~view);
 		~view
 	};
+	~makeViews = { |layout|
+		layout.add(~touchMenu = PopUpMenu());
+		~touchKeys = ~model.touchKeys ++ ["none"];
+		~touchMenu.items_(~touchKeys)
+		.action_(e { |view|
+			if(view.value == (~touchKeys.size - 1)) {
+				~model.setTouchIndex(nil)
+			} {
+				~model.setTouchIndex(view.value)
+			};
+		})
+		.value_(~indexForItem.(~touchKeys, ~model.touchKey));
+
+		~userMakeViews.(layout);
+
+		layout.add(~deleteButton = Button());
+		~deleteButton.fixedSize_(Size(20, 20))
+		.states_([["X", Color.black, Color.red(0.6)]])
+		.action_(e { ~model.free });
+
+		currentEnvironment
+	};
+
 	~setSize = { |view|
 		view.fixedHeight_(~height);
 		view
@@ -190,6 +213,27 @@ Proto {
 	~makeLayout = { |view|
 		view.layout = HLayout().margins_(~margins).spacing_(~spacing);
 		view.layout
+	};
+
+	~indexForItem = { |items, value|
+		value = value.asString;
+		items.detectIndex { |item| item.asString == value }
+		?? { items.size - 1 }
+	};
+
+	~update = { |obj, what ... args|
+		var oldItem;
+		[obj, what, args].debug(">> update");
+		switch(what)
+		{ \didFree } {
+			~removeResponder.();
+			defer(e { ~view.remove });
+		}
+		{ \touchKey } {
+			defer(e { ~touchMenu.value = args[0] ?? { ~touchKeys.size - 1 } });
+		}
+		{ ~userUpdate.(obj, what, *args) };  // default case, pass down
+		[obj, what, args].debug("<< update");
 	};
 } => PR(\abstractMappingGui);
 
@@ -509,22 +553,10 @@ PR(\abstractOSCMapping).clone {
 } => PR(\npMapping);
 
 PR(\abstractMappingGui).clone {
-	~makeViews = { |layout|
-		layout.add(~touchMenu = PopUpMenu());
+	~userMakeViews = { |layout|
+		">> userMakeViews".debug;
 		layout.add(~proxyMenu = PopUpMenu());
 		layout.add(~paramMenu = PopUpMenu());
-		layout.add(~deleteButton = Button());
-
-		~touchKeys = ~model.touchKeys ++ ["none"];
-		~touchMenu.items_(~touchKeys)
-		.action_(e { |view|
-			if(view.value == (~touchKeys.size - 1)) {
-				~model.setTouchIndex(nil)
-			} {
-				~model.setTouchIndex(view.value)
-			};
-		})
-		.value_(~indexForItem.(~touchKeys, ~model.touchKey));
 
 		~proxyKeys = ["none"];
 		~proxyMenu.items_(~proxyKeys)
@@ -549,29 +581,13 @@ PR(\abstractMappingGui).clone {
 		~model.getIDs;
 		~proxyMenu.value_(~indexForItem.(~proxyKeys, ~model.proxyKey));
 		~paramMenu.value_(~indexForItem.(~paramKeys, ~model.paramKey));
-
-		~deleteButton.fixedSize_(Size(20, 20))
-		.states_([["X", Color.black, Color.red(0.6)]])
-		.action_(e { ~model.free });
+		"<< userMakeViews".debug;
 	};
 
-	~indexForItem = { |items, value|
-		value = value.asString;
-		items.detectIndex { |item| item.asString == value }
-		?? { items.size - 1 }
-	};
-
-	~update = { |obj, what ... args|
+	~userUpdate = { |obj, what ... args|
 		var oldItem;
-		[obj, what, args].debug(">> update");
+		[obj, what, args].debug(">> userUpdate");
 		switch(what)
-		{ \didFree } {
-			~removeResponder.();
-			defer(e { ~view.remove });
-		}
-		{ \touchKey } {
-			defer(e { ~touchMenu.value = args[0] ?? { ~touchKeys.size - 1 } });
-		}
 		{ \proxyKeys } {
 			defer(e {
 				oldItem = ~proxyMenu.items[~proxyMenu.value];
@@ -595,7 +611,7 @@ PR(\abstractMappingGui).clone {
 		{ \paramKey } {
 			defer(e { ~paramMenu.value = args[0] ?? { ~paramKeys.size - 1 } });
 		};
-		[obj, what, args].debug("<< update");
+		[obj, what, args].debug("<< userUpdate");
 	};
 } => PR(\npMappingGui);
 
