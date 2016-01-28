@@ -688,6 +688,8 @@ PR(\abstractScrollParent).clone {
 	};
 	~userfree = {
 		~stopAliveThread.();
+		// 'copy' because \didFree below modifies the collection
+		~maps.copy.do { |map| map.map.free };
 	};
 
 	~makeViews = {
