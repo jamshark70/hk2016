@@ -295,3 +295,39 @@ BP(\xyz).listVars
 
 NotificationCenter.register(BP(\mwxyz).v, '/accxyz', \tester, { |... args| args.postln });
 NotificationCenter.unregister(BP(\mwxyz).v, '/accxyz', \tester);
+
+
+// funcs
+NotificationCenter.registrations
+BP(\mw).oscMapMgr.maps[0].map.listVars
+BP(\mw).oscMapMgr.maps[0].map.listMethods
+NotificationCenter.registrationsFor(BP(\mwtouch).v, '/1/toggle1');
+NotificationCenter.registrations.at(BP(\mwtouch).v)
+
+
+// enter
+t = TextView(nil, Rect(800, 200, 300, 200)).front;
+t.keyDownAction = { |view, char, modifiers, unicode|
+	[modifiers, modifiers.isCtrl, unicode].postln;
+};
+t.enterInterpretsSelection
+
+// doc error?
+w = Window("test", Rect(800, 200, 300, 200)).front;
+w.view.layout = VLayout(
+	t = TextView()
+);
+t.keyDownAction = { false };
+w.view.keyDownAction = { "propagated".postln };
+
+// nope, defaultKeyDownAction doesn't call the C++ end
+t.keyDownAction = { |view ... args|
+	view.defaultKeyDownAction(*args);
+	false
+};
+
+
+Ndef(\pan, { |pan| Pan2.ar(SinOsc.ar(440, 0, 0.1), pan) });
+Ndef(\pan).play;
+Ndef(\pan).stop;
+Ndef(\pan).clear;

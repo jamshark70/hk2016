@@ -623,6 +623,222 @@ PR(\abstractMappingGui).clone {
 
 
 
+// function mapping
+PR(\abstractOSCMapping).clone {
+	~initString = "{ |value| ... }";
+	~userprep = {
+		~oldString = ~initString;
+		~string = ~initString;
+	};
+
+	~string_ = { |str|
+		~function = str.interpret;
+		if(~function.isNil) {
+			currentEnvironment.changed(\compileError, str);
+		} {
+			~oldString = ~string;
+			~string = str;
+			currentEnvironment.changed(\string, str);
+		};
+		currentEnvironment
+	};
+
+	~action = { |value|
+		try { ~function.value(value) } { |error|
+			~function = nil;  // just one error, thanks
+			currentEnvironment.changed(\execError, error);
+		};
+	};
+
+	~getIDs = 0;  // not used
+} => PR(\funcMapping);
+
+
+PR(\abstractMappingGui).clone {
+	~highlighted = false;
+	~execErrBackground = Color(1, 0.6, 0.6);
+	~syntaxErrBackground = Color(1, 0.8, 0.8);
+	~background = Color.white;
+	~stringColor = Color.black;
+	~font = Font(Font.defaultMonoFace, 10);
+
+	~userMakeViews = { |layout|
+		layout.add(~stringView = TextField());
+		layout.add(~popOutButton = Button());
+
+		~touchMenu.maxWidth = 120;
+		layout.setStretch(~stringView, 3);
+		~stringView.font_(~font)
+		.stringColor_(~stringColor)
+		.background_(~background)
+		.string_(~model.string)
+		.action_(e { |view|
+			~model.string = view.string;
+		})
+		.keyDownAction_(e { |view|
+			if(~highlighted) {
+				view.background = ~background;
+				~highlighted = false;
+				nil
+			};
+		});
+
+		~popOutButton.fixedSize_(Size(20, 20))
+		.states_([["^"]])
+		.action_(e { |view|
+			~popOutEditor.();
+		});
+	};
+
+	~userUpdate = { |obj, what ... args|
+		var name;
+		switch(what)
+		{ \string } {
+			defer(e { ~stringView.string = args[0] })
+		}
+		{ \compileError } {
+			defer(e {
+				~highlighted = true;
+				~stringView.background = ~syntaxErrBackground;
+				if(~popOutView.notNil) {
+					~popOutView.background = ~syntaxErrBackground;
+				};
+				// compile error is already posted IIRC
+			});
+		}
+		{ \execError } {
+			defer(e {
+				~highlighted = true;
+				~stringView.background = ~execErrBackground;
+				if(~popOutView.notNil) {
+					~popOutView.background = ~execErrBackground;
+				};
+				~showError.(args[0]);
+			});
+		}
+		{ \touchKey } {
+			if(~popOutWindow.notNil) {
+				defer(e { ~popOutWindow.name = ~popOutTitle.() });
+			};
+		}
+		{ \didFree } {
+			[~errorWindow, ~popOutWindow].do { |window|
+				if(window.notNil and: { window.isClosed.not }) {
+					window.onClose_(nil).close;
+				};
+			};
+		};
+	};
+
+	~popOutEditor = {
+		if(~popOutWindow.isNil or: { ~popOutWindow.isClosed }) {
+			~popOutWindow = Window(~popOutTitle.(),
+				Rect.aboutPoint(Window.screenBounds.center, 400, 300)
+			).onClose_(e {
+				~popOutWindow = nil;
+				~popOutView = nil;
+				~model.string = ~popOutCache;
+			});
+			~popOutWindow.view.layout = VLayout(
+				~popOutView = TextView()
+			);
+		};
+		~popOutView.string_(~model.string)
+		.background_(~background)
+		.stringColor_(~stringColor)
+		.font_(~font)
+		.enterInterpretsSelection_(false)
+		.keyDownAction_(e { |view, char, modifiers, unicode|
+			if(~highlighted) {
+				view.background = ~background;
+				~stringView.background = ~background;
+				~highlighted = false;
+			};
+			if(unicode == 13) {
+				if(
+					if(thisProcess.platform.name == \osx) { modifiers.isCmd } { modifiers.isCtrl }
+				) {
+					~model.string = view.string;
+				};
+			};
+			nil
+		})
+		.keyUpAction_(e { |view|
+			~popOutCache = view.string;  // work around TextView close bug
+		});
+		~popOutWindow.front;
+	};
+	~popOutTitle = {
+		if(~model.touchKey.notNil) {
+			"Function for " ++ ~model.touchKey
+		} {
+			"Unassigned function"
+		}
+	};
+
+	~showError = { |exception|
+		var backtrace;
+		if(~errorWindow.isNil or: { ~errorWindow.isClosed }) {
+			~errorWindow = Window("Error",
+				Rect.aboutPoint(Window.screenBounds.center, 400, 300)
+			).onClose_(e { ~errorWindow = nil });
+			~errorWindow.view.layout = VLayout(
+				~errorView = TextView()
+			);
+			~errorView.font_(~font);
+		};
+		backtrace = ~streamBacktrace.(exception);
+		~errorView.string = exception.errorString ++ "\n\n" ++ backtrace.collection;
+		~errorWindow.front;
+	};
+
+	// mostly copied-and-pasted from Exception.sc
+	// because it provides no interface to use the string, only post it
+	~streamBacktrace = { |exception, out(CollStream.new)|
+		var currentFrame, def, ownerClass, methodName, pos, tempStr;
+		currentFrame = exception.protectedBacktrace;
+		while({currentFrame.notNil}, {
+			def = currentFrame.functionDef;
+			if(def.isKindOf(Method), {
+				ownerClass = def.ownerClass;
+				methodName = def.name;
+				if(ownerClass == Function && { #['protect', 'try'].includes(methodName) }, {
+					pos = out.pos;
+				});
+				out << "\t%:%\t%\n".format(ownerClass, methodName, currentFrame.address);
+			}, {
+				out << "\ta FunctionDef\t%\n".format(currentFrame.address);
+				// sourceCode may be ridiculously huge,
+				// so steal the technique from Object:asString to reduce the printed size
+				tempStr = String.streamContentsLimit({ |stream|
+					stream << "\t\tsourceCode = " <<< (def.sourceCode ? "<an open Function>");
+				}, 512);
+				out << tempStr;
+				if(tempStr.size >= 512) { out << "...etc..." << $" };
+				out << Char.nl;
+			});
+			def.argNames.do({|name, i|
+				out << "\t\targ % = %\n".format(name, currentFrame.args[i]);
+			});
+			def.varNames.do({|name, i|
+				out << "\t\tvar % = %\n".format(name, currentFrame.vars[i]);
+			});
+			currentFrame = currentFrame.caller;
+		});
+		// lose everything after the last Function:protect
+		// it just duplicates the normal stack with less info
+		// but, an Error in a routine in a Scheduler
+		// may not have a try/protect in the protectedBacktrace
+		// then, pos is nil and we should print everything
+		if(pos.notNil) {
+			out.collection = out.collection.copyFromStart(pos)
+		};
+		out
+	};
+} => PR(\funcMappingGui);
+
+
+
 // mapping editor
 Proto {
 	~prep = { |parent, layout, bounds|
@@ -701,6 +917,10 @@ PR(\abstractScrollParent).clone {
 			{ 1 } {
 				map = PR(\npMapping).copy.prep;
 				gui = PR(\npMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
+			}
+			{ 3 } {
+				map = PR(\funcMapping).copy.prep;
+				gui = PR(\funcMappingGui).copy.prep(map, ~layout, false);  // don't add to layout!
 			}
 			{ "Not yet implemented".warn };
 			if(map.notNil) {
