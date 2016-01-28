@@ -300,11 +300,9 @@ Proto {
 						~action.(args[1]);
 					}
 				);
-				~resp.dump;
 			};
 			~userRegister.();
 		};
-		"<< register".debug;
 		currentEnvironment
 	};
 	~userCanRegister = true;
