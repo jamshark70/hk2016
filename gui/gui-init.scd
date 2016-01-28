@@ -223,7 +223,6 @@ Proto {
 
 	~update = { |obj, what ... args|
 		var oldItem;
-		[obj, what, args].debug(">> update");
 		switch(what)
 		{ \didFree } {
 			~removeResponder.();
@@ -233,7 +232,6 @@ Proto {
 			defer(e { ~touchMenu.value = args[0] ?? { ~touchKeys.size - 1 } });
 		};
 		~userUpdate.(obj, what, *args);  // always pass down
-		[obj, what, args].debug("<< update");
 	};
 } => PR(\abstractMappingGui);
 
@@ -455,16 +453,12 @@ PR(\abstractOSCMapping).clone {
 	};
 
 	~getIDs = {
-		">> getIDs".debug;
 		~setProxyKeys.(~space.envir.keys.as(Array).sort);
 		~getParams.();
-		"<< getIDs".debug;
-		// ~setProxyIndex.(0);
-		// ~setTouchIndex.(0);
 	};
 	~setProxyKeys = { |keys|
 		~proxyKeys = keys;
-		currentEnvironment.changed(\proxyKeys, keys.debug("proxyKeys notification"));
+		currentEnvironment.changed(\proxyKeys, keys);
 	};
 
 	~setProxyIndex = { |i|
@@ -534,7 +528,6 @@ PR(\abstractOSCMapping).clone {
 
 	// respond to Ndef updates
 	~update = { |obj, what ... args|  // NodeProxy .changed sends arrays of args
-		// [obj, what, args].debug(">> npMapping update");
 		switch(what)
 		{ \source } {
 			// [obj, index, channelOffset, extraArgs, now]
@@ -552,7 +545,6 @@ PR(\abstractOSCMapping).clone {
 			~setProxyIndex.(nil);
 			~setParamIndex.(nil);
 		};
-		// [obj, what, args].debug("<< npMapping update");
 		currentEnvironment
 	};
 
@@ -560,7 +552,6 @@ PR(\abstractOSCMapping).clone {
 
 PR(\abstractMappingGui).clone {
 	~userMakeViews = { |layout|
-		">> userMakeViews".debug;
 		layout.add(~proxyMenu = PopUpMenu());
 		layout.add(~paramMenu = PopUpMenu());
 
@@ -587,12 +578,10 @@ PR(\abstractMappingGui).clone {
 		~model.getIDs;
 		~proxyMenu.value_(~indexForItem.(~proxyKeys, ~model.proxyKey));
 		~paramMenu.value_(~indexForItem.(~paramKeys, ~model.paramKey));
-		"<< userMakeViews".debug;
 	};
 
 	~userUpdate = { |obj, what ... args|
 		var oldItem;
-		[obj, what, args].debug(">> userUpdate");
 		switch(what)
 		{ \proxyKeys } {
 			defer(e {
@@ -610,14 +599,12 @@ PR(\abstractMappingGui).clone {
 				oldItem = ~paramMenu.items[~paramMenu.value];
 				~paramKeys = args[0] ++ ["none"];
 				~paramMenu.items = ~paramKeys;
-				~paramMenu.items.debug("getting items from menu");
 				~paramMenu.value = ~indexForItem.(~paramKeys, oldItem);
 			})
 		}
 		{ \paramKey } {
 			defer(e { ~paramMenu.value = args[0] ?? { ~paramKeys.size - 1 } });
 		};
-		[obj, what, args].debug("<< userUpdate");
 	};
 } => PR(\npMappingGui);
 
