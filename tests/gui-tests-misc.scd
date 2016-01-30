@@ -394,3 +394,21 @@ b.free;
 p.listVars;
 
 p.free;
+
+
+p = PR(\bufferManager).copy.prep;
+w = Window("test", Rect(800, 200, 500, 400)).front;
+w.view.layout = l = VLayout();
+q = PR(\bufferManagerGui).copy.prep(p, l);
+
+b = Buffer.readAndQuery(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+b.free;
+
+q.free;
+p.free;
+
+s.bufferAllocator.debug
+
+p.dependants
+q.bufList.value
+p.listVars

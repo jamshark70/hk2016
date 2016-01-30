@@ -1093,19 +1093,27 @@ Proto {
 	};
 	~free = {
 		~clearBufWatcher.();
-		currentEnvironment
+		currentEnvironment.changed(\didFree);
 	};
 
 	// may also update a previously loaded buffer, if you did myBuf.read(...)
 	~addBuf = { |buf|
-		buf.debug("addBuf");
-		~bufs = ~bufs.add(buf).sort { |a, b| a.bufnum < b.bufnum };
-		// changed
+		var oldBufI;
+		// buf.debug("addBuf");
+		oldBufI = ~bufs.detectIndex { |buf| buf.bufnum == buf.bufnum };
+		if(oldBufI.isNil) {
+			~bufs = ~bufs.add(buf).sort { |a, b| a.bufnum < b.bufnum };
+		} {
+			~bufs[oldBufI] = buf;
+		};
+		currentEnvironment.changed(\addBuf, ~bufs);
 	};
 	~freeBuf = { |buf|
-		buf.debug("freeBuf");
+		// 'if' is to prevent an infinite loop:
+		// server /done --> watcher --> here --> free --> server /done, etc.
+		if(buf.bufnum.notNil) { buf.free };
 		~bufs.remove(buf);
-		// changed
+		currentEnvironment.changed(\freeBuf, ~bufs);
 	};
 	~freeBufnum = { |bufnum|
 		var buf = ~bufs.detect { |buf| buf.bufnum == bufnum };
@@ -1114,34 +1122,128 @@ Proto {
 		};
 		currentEnvironment
 	};
+	~freeBufIndex = { |index|
+		if(~bufs[index].notNil) {
+			~freeBuf.(~bufs[index]);
+		} {
+			"freeBufIndex: index out of range".warn;
+		};
+		currentEnvironment
+	};
 
 	~readCmds = IdentitySet['/b_allocRead', '/b_allocReadChannel', '/b_read', '/b_readChannel'];
 	~makeBufWatcher = {
-		~bufWatcher = OSCFunc(e { |msg, time, addr|
-			var server, buf;
-			case
-			{ msg[1] == '/b_free' } {
-				~freeBufnum.(msg[2]);
-			}
-			{ ~readCmds.includes(msg[1]) } {
-				server = Server.all.detect { |item| item.addr == addr };
-				if(server.notNil) {
-					buf = Buffer.cachedBufferAt(server, msg[2]);
-					if(buf.notNil) {
-						// .copy insulates from the fact that .free clears instance vars
-						~addBuf.(buf.copy);
-					} { "Buffer number % not found in server %".format(msg[2], server).warn };
-				} {
-					"/done received but no Server object found for %".format(addr).warn;
+		if(~bufWatcher.isNil) {
+			~bufWatcher = OSCFunc(e { |msg, time, addr|
+				var server, buf;
+				case
+				{ msg[1] == '/b_free' } {
+					~freeBufnum.(msg[2]);
 				}
-			};
-		}, '/done');
+				{ ~readCmds.includes(msg[1]) } {
+					server = Server.all.detect { |item| item.addr == addr };
+					if(server.notNil) {
+						buf = Buffer.cachedBufferAt(server, msg[2]);
+						if(buf.notNil) {
+							// .copy insulates from the fact that .free clears instance vars
+							~addBuf.(buf.copy);
+						} { "Buffer number % not found in server %".format(msg[2], server).warn };
+					} {
+						"/done received but no Server object found for %".format(addr).warn;
+					}
+				};
+			}, '/done');
+		};
+		~bufWatcher
 	};
 	~clearBufWatcher = {
 		~bufWatcher.free;
+		~bufWatcher = nil;
 	};
 } => PR(\bufferManager);
 
+Proto {
+	~prep = { |model, layout|
+		~model = model;
+		~model.addDependant(currentEnvironment);
+		~parentLayout = layout;
+		~makeViews.();
+		currentEnvironment
+	};
+	~free = {
+		~model.removeDependant(currentEnvironment);
+		if(~view.isClosed.not) { ~view.onClose_(nil).remove };
+		currentEnvironment
+	};
+
+	~setBufStrings = { |bufStrings|
+		if(thisThread.canCallOS) {
+			~bufList.items = bufStrings;
+		} {
+			defer(e { ~bufList.items = bufStrings });
+		};
+		currentEnvironment
+	};
+	~bufStrings = { |bufs|
+		bufs.collect { |buf| buf.path.basename }
+	};
+
+	~update = { |obj, what ... args|
+		switch(what)
+		{ \addBuf } {
+			defer(e {
+				var oldItem = ~bufList.items[~bufList.value ?? { 0 }], i;
+				~setBufStrings.(~bufStrings.(args[0]));
+				i = ~bufList.items.indexOfEqual(oldItem);
+				if(i.notNil) { ~bufList.value = i };
+			});
+		}
+		{ \freeBuf } {
+			~setBufStrings.(~bufStrings.(args[0]))
+		}
+		{ \didFree } {
+			~free.();
+		};
+	};
+
+	~makeViews = {
+		~parentLayout.add(~view = View());
+		~view.layout = HLayout(
+			VLayout(
+				HLayout(
+					~readButton = Button(),
+					~freeButton = Button(),
+				),
+				~bufList = ListView()
+			)
+		);
+
+		~view.onClose = e { ~free.() };
+
+		~bufList.items = ~bufStrings.(~model.bufs);
+
+		~readButton.states_([["Load file"]])
+		.action_(e {
+			Dialog.openPanel(e { |path| ~readBuf.(path) })
+		});
+
+		~freeButton.states_([["Free buffer"]])
+		.action_(e {
+			~model.freeBufIndex(~bufList.value);
+		});
+	};
+
+	~readBuf = { |path|
+		var sf = SoundFile.openRead(path);
+		if(sf.notNil) {
+			Buffer.read(s, path);  // model's watcher will catch the successful load
+		} {
+			"Could not open %: Either not found, or not a soundfile"
+			.format(path.basename)
+			.warn;
+		};
+	};
+} => PR(\bufferManagerGui);
 
 
 /***** GUI: Pattern section *****/
