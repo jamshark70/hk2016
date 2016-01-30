@@ -1085,9 +1085,62 @@ PR(\abstractScrollParent).clone {
 
 /***** GUI: Buffer section *****/
 
-// Proto {
-//
-// } => PR(\bufferManager);
+Proto {
+	~prep = {
+		~bufs = Array.new;
+		~makeBufWatcher.();
+		currentEnvironment
+	};
+	~free = {
+		~clearBufWatcher.();
+		currentEnvironment
+	};
+
+	// may also update a previously loaded buffer, if you did myBuf.read(...)
+	~addBuf = { |buf|
+		buf.debug("addBuf");
+		~bufs = ~bufs.add(buf).sort { |a, b| a.bufnum < b.bufnum };
+		// changed
+	};
+	~freeBuf = { |buf|
+		buf.debug("freeBuf");
+		~bufs.remove(buf);
+		// changed
+	};
+	~freeBufnum = { |bufnum|
+		var buf = ~bufs.detect { |buf| buf.bufnum == bufnum };
+		if(buf.notNil) {
+			~freeBuf.(buf);
+		};
+		currentEnvironment
+	};
+
+	~readCmds = IdentitySet['/b_allocRead', '/b_allocReadChannel', '/b_read', '/b_readChannel'];
+	~makeBufWatcher = {
+		~bufWatcher = OSCFunc(e { |msg, time, addr|
+			var server, buf;
+			case
+			{ msg[1] == '/b_free' } {
+				~freeBufnum.(msg[2]);
+			}
+			{ ~readCmds.includes(msg[1]) } {
+				server = Server.all.detect { |item| item.addr == addr };
+				if(server.notNil) {
+					buf = Buffer.cachedBufferAt(server, msg[2]);
+					if(buf.notNil) {
+						// .copy insulates from the fact that .free clears instance vars
+						~addBuf.(buf.copy);
+					} { "Buffer number % not found in server %".format(msg[2], server).warn };
+				} {
+					"/done received but no Server object found for %".format(addr).warn;
+				}
+			};
+		}, '/done');
+	};
+	~clearBufWatcher = {
+		~bufWatcher.free;
+	};
+} => PR(\bufferManager);
 
 
 

@@ -346,3 +346,51 @@ BP(\mw).oscMapMgr.maps[1].map.saveState
 BP(\mw).oscMapMgr.maps.do { |map| map.map.saveState.postln }; ""
 
 { Ndef(\pan).play }.asCompileString.asCompileString
+
+
+// buffers
+// what if you read a buffer independently?
+(
+var readCmds = IdentitySet['/b_allocRead', '/b_allocReadChannel', '/b_read', '/b_readChannel'];
+
+OSCdef(\bufWatcher, { |msg, time, addr|
+	var server, buf;
+	case
+	{ readCmds.includes(msg[1]) } {
+		server = Server.all.detect { |item| item.addr == addr };
+		if(server.notNil) {
+			buf = Buffer.cachedBufferAt(server, msg[2]);
+			if(buf.notNil) {
+				// .copy insulates from the fact that .free clears instance vars
+				buf.debug("read completed");
+			} { "Buffer number % not found in server %".format(msg[2], server).warn };
+		} {
+			"/done % received but no Server object found for %".format(msg[1], addr).warn;
+		}
+	}
+	{ msg[1] == '/b_free' } {
+		// buffer object is not available here, but OK, don't need it
+		[msg[2], Buffer.cachedBufferAt(s, msg[2])].debug("freed");
+	};
+}, '/done', s.addr);
+)
+
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+// test corner case: free+read quickly
+// response order is OK
+b.free; b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+OSCdef(\bufWatcher).free;
+
+
+p = PR(\bufferManager).copy.prep;
+p.listVars;
+
+b = Buffer.readAndQuery(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+p.listVars;
+
+b.free;
+p.listVars;
+
+p.free;
