@@ -1086,13 +1086,106 @@ PR(\abstractScrollParent).clone {
 /***** GUI: Buffer section *****/
 
 Proto {
+	~prep = { |proxy, param, buf|
+		if(~space.isNil) {
+			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
+		};
+		if(proxy.notNil) {
+			~setProxy.(proxy);
+			if(param.notNil) {
+				~setParam.(param);
+			};
+		};
+		if(buf.notNil) { ~setBuf.(buf) };
+		currentEnvironment
+	};
+
+	~setProxyKey = { |proxyKey|
+		if(proxyKey.notNil) {
+			if(~space[proxyKey].notNil) {
+				~clearDependant.();
+				~proxy = ~space[proxyKey];
+				~proxyKey = proxyKey;
+				~setDependant.();
+				currentEnvironment.changed(\proxyKey, proxyKey);
+				~getParams.();
+				if(~paramKey.notNil) { ~setParamKey.(~paramKey) };
+			} {
+				"Proxy % not found".format(proxyKey).warn;
+			}
+		} {
+			~clearDependant.();
+			~proxy = nil;
+			~proxyKey = nil;
+			currentEnvironment.changed(\proxyKey, nil);
+			~setParam.(nil);
+		};
+		currentEnvironment
+	};
+
+	~setParamKey = { |paramKey|
+		if(~proxy.notNil) {
+			if(~paramKeys.isNil) { ~getParams.() };
+			if(paramKey.isNil or: { ~paramKeys.includes(paramKey) }) {
+				~paramKey = paramKey;
+				currentEnvironment.changed(\paramKey, paramKey);
+			} {
+				"Parameter % not found in proxy %".format(paramKey, ~proxyKey).warn;
+			};
+		};
+		currentEnvironment
+	};
+
+	~setBuf = { |buffer|
+		if(~proxy.notNil and: { ~paramKey.notNil }) {
+			~proxy.set(~paramKey, buffer.bufnum);
+		};
+		currentEnvironment
+	};
+
+	~update = { |obj, what ... args|
+		switch(what)
+		{ \source } {
+			// [obj, index, channelOffset, extraArgs, now]
+			~getParams.();  // this could add new parameters
+		}
+		{ \clear } {
+			~free.();
+		};
+		currentEnvironment
+	};
+}.import((npMapping: #[getParams, setDependant, clearDependant])) => PR(\bufProxyMap);
+
+PR(\abstractMappingGui).clone {
+
+	~makeViews = { |layout|
+		layout.add(~proxyText = StaticText());
+		layout.add(~paramText = StaticText());
+		layout.add(~bufMenu = PopUpMenu());
+
+		currentEnvironment
+	};
+
+	~update = { |obj, what ... args|
+
+	};
+} => PR(\bufProxyMapGui);
+
+
+
+Proto {
 	~prep = {
 		~bufs = Array.new;
+		if(~space.isNil) {
+			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
+		};
 		~makeBufWatcher.();
+		~startAliveThread.();
 		currentEnvironment
 	};
 	~free = {
 		~clearBufWatcher.();
+		~stopAliveThread.();
 		currentEnvironment.changed(\didFree);
 	};
 
@@ -1160,7 +1253,15 @@ Proto {
 		~bufWatcher.free;
 		~bufWatcher = nil;
 	};
-} => PR(\bufferManager);
+
+	~checkProxies = {
+		if(~prevProxyKeys != ~space.envir.keys) {
+			~prevProxyKeys = ~space.envir.keys;
+
+		};
+	};
+}.import((touchMapManager: #[startAliveThread, stopAliveThread, updatePeriod]))
+=> PR(\bufferManager);
 
 Proto {
 	~prep = { |model, layout|
