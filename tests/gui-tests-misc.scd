@@ -422,7 +422,7 @@ Object.dependantsDictionary.keysValuesDo { |key, value|
 
 b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
 
-Ndef(\buf, { |bufnum, amp = 0.1| PlayBuf.ar(1, bufnum, loop: 1).dup });
+Ndef(\buf, { |bufnum = 1, amp = 0.1| (PlayBuf.ar(1, bufnum, loop: 1) * amp).dup });
 
 Ndef(\buf).play;
 Ndef(\buf).stop;
@@ -430,13 +430,31 @@ Ndef(\buf).stop;
 Ndef(\buf).trace;
 
 Ndef(\buf).nodeMap
-Ndef(\buf).getKeysValues[\bufnum]
+Ndef(\buf).getKeysValues
 
 Ndef(\buf).clear;
 
 Ndef.all[\localhost].envir.keys
 Ndef.all[\localhost][\buf].rate.asCompileString
 
+Ndef(\buf, { |bufnum = 1, amp = 0.1, rate = 1| (PlayBuf.ar(1, bufnum, rate: rate, loop: 1) * amp).dup });
+Ndef(\buf).addSpec(\rate, [0.2, 5, \exp]);
+
+Ndef(\buf, { |bufnum, amp = 0.1, rate = 1|
+	var tRate = 20,
+	trig = Impulse.ar(tRate),
+	bufdur = BufDur.kr(bufnum),
+	phasor = Phasor.kr(0, ControlDur.ir / bufdur, 0, 1) * bufdur,
+	dur = 4 / tRate;
+	TGrains.ar(2, trig, bufnum, rate, phasor, dur, 0, amp);
+});
+Ndef(\buf).trace;
+
+Ndef(\buf).set(\bufnum, 0);
+Ndef(\buf).set(\bufnum, 1);
+
 BP(\mw).bufMgr.listVars
+
+
 PR(\bufferManager).listMethods
 PR(\bufferManager).v[\update].postcs

@@ -1092,16 +1092,23 @@ Proto {
 			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
 		};
 		defer(e {
+			var bufnum, buf;
 			">> bufProxyMap:prep deferred update".debug;
-			currentEnvironment.dependants.debug("any deps?");
 			~setBuffers.(buffers);
 			if(proxy.notNil) {
 				~setProxyKey.(proxy);
 				if(param.notNil) {
 					~setParamKey.(param);
+					bufnum = ~paramValue.();
+					buf = ~buffers.detect { |item| item.bufnum == bufnum };
+					if(buf.notNil) {
+						~setBuf.(buf)
+					} {
+						"Buffer not found for ~%.set(%...)".format(proxy, param);
+					};
 				};
 			};
-			if(buf.notNil) { ~setBuf.(buf) };
+			// if(buf.notNil) { ~setBuf.(buf) };
 			"<< bufProxyMap:prep deferred update".debug;
 		}, 0.1);
 		[buffers, proxy, param, buf].debug("<< bufProxyMap:prep");
@@ -1196,10 +1203,11 @@ Proto {
 		currentEnvironment.changed(\bufKeys, ~bufKeys);
 	};
 	~bufferForNumber = { |bufnum|
-		~buffers.detectIndex { |item| item.tryPerform(\bufnum) == bufnum };
+		~buffers.detect { |item| item.tryPerform(\bufnum) == bufnum };
 	};
 
 	~update = { |obj, what ... args|
+		var i;
 		[obj, what, args].debug(">> bufProxyMap:update");
 		switch(what)
 		{ \source } {
@@ -1207,8 +1215,9 @@ Proto {
 			~getParams.();  // this could add new parameters
 		}
 		{ \set } {
-			if(what == ~paramKey) {
-				~setBuf.(~bufferForNumber.(args[0].asControlInput));
+			i = args[0].detectIndex { |item| item == ~paramKey };
+			if(i.notNil) {
+				~setBuf.(~bufferForNumber.(args[0][i+1]));
 			};
 		}
 		{ \clear } {
