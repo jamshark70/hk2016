@@ -1087,13 +1087,11 @@ PR(\abstractScrollParent).clone {
 
 Proto {
 	~prep = { |buffers, proxy, param, buf|
-		[buffers, proxy, param, buf].debug(">> bufProxyMap:prep");
 		if(~space.isNil) {
 			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
 		};
 		defer(e {
 			var bufnum, buf;
-			">> bufProxyMap:prep deferred update".debug;
 			~setBuffers.(buffers);
 			if(proxy.notNil) {
 				~setProxyKey.(proxy);
@@ -1108,10 +1106,7 @@ Proto {
 					};
 				};
 			};
-			// if(buf.notNil) { ~setBuf.(buf) };
-			"<< bufProxyMap:prep deferred update".debug;
 		}, 0.1);
-		[buffers, proxy, param, buf].debug("<< bufProxyMap:prep");
 		currentEnvironment
 	};
 	~free = {
@@ -1120,7 +1115,6 @@ Proto {
 	};
 
 	~setProxyKey = { |proxyKey|
-		proxyKey.debug(">> bufProxyMap:setProxyKey");
 		if(proxyKey.notNil) {
 			if(~space[proxyKey].notNil) {
 				~clearDependant.();
@@ -1140,12 +1134,10 @@ Proto {
 			currentEnvironment.changed(\proxyKey, nil);
 			~setParam.(nil);
 		};
-		proxyKey.debug("<< bufProxyMap:setProxyKey");
 		currentEnvironment
 	};
 
 	~setParamKey = { |paramKey|
-		paramKey.debug(">> bufProxyMap:setParamKey");
 		if(~proxy.notNil) {
 			if(~paramKeys.isNil) { ~getParams.() };
 			if(paramKey.isNil or: { ~paramKeys.includes(paramKey) }) {
@@ -1155,12 +1147,10 @@ Proto {
 				"Parameter % not found in proxy %".format(paramKey, ~proxyKey).warn;
 			};
 		};
-		paramKey.debug("<< bufProxyMap:setParamKey");
 		currentEnvironment
 	};
 
 	~setBuf = { |buffer|
-		buffer.debug(">> bufProxyMap:setBuf");
 		if(~proxy.notNil and: { ~paramKey.notNil }) {
 			~buf = buffer;
 			if(~paramValue.().asControlInput != buffer.asControlInput) {
@@ -1168,24 +1158,20 @@ Proto {
 			};
 			currentEnvironment.changed(\bufKey, buffer.asControlInput);
 		};
-		buffer.debug("<< bufProxyMap:setBuf");
 		currentEnvironment
 	};
 	~paramValue = { |proxy(~proxy), paramKey(~paramKey)|
 		var pair;
-		debug(
-			if(proxy.notNil and: { paramKey.notNil }) {
-				if(proxy.nodeMap[paramKey].notNil) {
-					proxy.nodeMap[paramKey]
-				} {
-					pair = proxy.getKeysValues.detect { |pair|
-						pair[0] == paramKey
-					};
-					if(pair.notNil) { pair[1] };
+		if(proxy.notNil and: { paramKey.notNil }) {
+			if(proxy.nodeMap[paramKey].notNil) {
+				proxy.nodeMap[paramKey]
+			} {
+				pair = proxy.getKeysValues.detect { |pair|
+					pair[0] == paramKey
 				};
-			};  // else nil
-			, "paramValue"
-		)
+				if(pair.notNil) { pair[1] };
+			};
+		};  // else nil
 	};
 
 	~keyForBuffer = { |buffer|
@@ -1208,7 +1194,6 @@ Proto {
 
 	~update = { |obj, what ... args|
 		var i;
-		[obj, what, args].debug(">> bufProxyMap:update");
 		switch(what)
 		{ \source } {
 			// [obj, index, channelOffset, extraArgs, now]
@@ -1223,7 +1208,6 @@ Proto {
 		{ \clear } {
 			~free.();
 		};
-		[obj, what, args].debug("<< bufProxyMap:update");
 		currentEnvironment
 	};
 }.import((npMapping: #[getParams, setDependant, clearDependant])) => PR(\bufProxyMap);
@@ -1255,7 +1239,6 @@ PR(\abstractMappingGui).clone {
 */
 	~update = { |obj, what ... args|
 		var oldItem, i;
-		[obj, what, args].debug(">> bufProxyMapGui:update");
 		switch(what)
 		{ \didFree } {
 			~removeResponder.();
@@ -1286,7 +1269,6 @@ PR(\abstractMappingGui).clone {
 				});
 			};
 		};
-		[obj, what, args].debug("<< bufProxyMapGui:update");
 	};
 } => PR(\bufProxyMapGui);
 
@@ -1316,7 +1298,6 @@ Proto {
 	// may also update a previously loaded buffer, if you did myBuf.read(...)
 	~addBuf = { |buf|
 		var oldBufI;
-		// buf.debug("addBuf");
 		oldBufI = ~bufs.detectIndex { |item| item.bufnum == buf.bufnum };
 		if(oldBufI.isNil) {
 			~bufs = ~bufs.add(buf).sort { |a, b| a.bufnum < b.bufnum };
@@ -1383,7 +1364,6 @@ Proto {
 		var keys = ~space.envir.keys.reject { |key|
 			~space[key].rate == \scalar
 		};
-		// keys.debug(">> checkProxies");
 		if(~prevProxyKeys != keys) {
 			~prevProxyKeys = keys;
 			keys.do { |key|

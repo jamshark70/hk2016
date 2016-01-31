@@ -440,14 +440,15 @@ Ndef.all[\localhost][\buf].rate.asCompileString
 Ndef(\buf, { |bufnum = 1, amp = 0.1, rate = 1| (PlayBuf.ar(1, bufnum, rate: rate, loop: 1) * amp).dup });
 Ndef(\buf).addSpec(\rate, [0.2, 5, \exp]);
 
-Ndef(\buf, { |bufnum, amp = 0.1, rate = 1|
+Ndef(\buf, { |bufnum, amp = 0.1, rate = 1, scanRate = 1|
 	var tRate = 20,
 	trig = Impulse.ar(tRate),
 	bufdur = BufDur.kr(bufnum),
-	phasor = Phasor.kr(0, ControlDur.ir / bufdur, 0, 1) * bufdur,
+	phasor = Phasor.kr(0, scanRate * ControlDur.ir / bufdur, 0, 1) * bufdur,
 	dur = 4 / tRate;
 	TGrains.ar(2, trig, bufnum, rate, phasor, dur, 0, amp);
 });
+Ndef(\buf).addSpec(\scanRate, [0.2, 5, \exp]);
 Ndef(\buf).trace;
 
 Ndef(\buf).set(\bufnum, 0);
