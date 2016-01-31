@@ -1267,7 +1267,10 @@ PR(\abstractMappingGui).clone {
 		{ \bufKeys } {
 			if(args[0].notNil) {
 				defer(e {
-					oldItem = ~bufMenu.items[~bufMenu.value];
+					// Somehow .items can be nil... that's a bit absurd...
+					if(~bufMenu.items.notNil and: { ~bufMenu.value.notNil }) {
+						oldItem = ~bufMenu.items[~bufMenu.value];
+					};
 					~bufMenu.items = args[0];
 					i = args[0].indexOfEqual(oldItem);
 					if(i.notNil) { ~bufMenu.value = i };
