@@ -412,3 +412,31 @@ s.bufferAllocator.debug
 p.dependants
 q.bufList.value
 p.listVars
+
+
+// buffers
+OSCFunc.allEnabled
+Object.dependantsDictionary.keysValuesDo { |key, value|
+	if(key.isKindOf(Proto)) { [key, value].postln; key.listVars };
+}; ""
+
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+
+Ndef(\buf, { |bufnum, amp = 0.1| PlayBuf.ar(1, bufnum, loop: 1).dup });
+
+Ndef(\buf).play;
+Ndef(\buf).stop;
+
+Ndef(\buf).trace;
+
+Ndef(\buf).nodeMap
+Ndef(\buf).getKeysValues[\bufnum]
+
+Ndef(\buf).clear;
+
+Ndef.all[\localhost].envir.keys
+Ndef.all[\localhost][\buf].rate.asCompileString
+
+BP(\mw).bufMgr.listVars
+PR(\bufferManager).listMethods
+PR(\bufferManager).v[\update].postcs

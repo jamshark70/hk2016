@@ -1086,21 +1086,34 @@ PR(\abstractScrollParent).clone {
 /***** GUI: Buffer section *****/
 
 Proto {
-	~prep = { |proxy, param, buf|
+	~prep = { |buffers, proxy, param, buf|
+		[buffers, proxy, param, buf].debug(">> bufProxyMap:prep");
 		if(~space.isNil) {
 			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
 		};
-		if(proxy.notNil) {
-			~setProxy.(proxy);
-			if(param.notNil) {
-				~setParam.(param);
+		defer(e {
+			">> bufProxyMap:prep deferred update".debug;
+			currentEnvironment.dependants.debug("any deps?");
+			~setBuffers.(buffers);
+			if(proxy.notNil) {
+				~setProxyKey.(proxy);
+				if(param.notNil) {
+					~setParamKey.(param);
+				};
 			};
-		};
-		if(buf.notNil) { ~setBuf.(buf) };
+			if(buf.notNil) { ~setBuf.(buf) };
+			"<< bufProxyMap:prep deferred update".debug;
+		}, 0.1);
+		[buffers, proxy, param, buf].debug("<< bufProxyMap:prep");
 		currentEnvironment
+	};
+	~free = {
+		~clearDependant.();
+		currentEnvironment.changed(\didFree);
 	};
 
 	~setProxyKey = { |proxyKey|
+		proxyKey.debug(">> bufProxyMap:setProxyKey");
 		if(proxyKey.notNil) {
 			if(~space[proxyKey].notNil) {
 				~clearDependant.();
@@ -1120,10 +1133,12 @@ Proto {
 			currentEnvironment.changed(\proxyKey, nil);
 			~setParam.(nil);
 		};
+		proxyKey.debug("<< bufProxyMap:setProxyKey");
 		currentEnvironment
 	};
 
 	~setParamKey = { |paramKey|
+		paramKey.debug(">> bufProxyMap:setParamKey");
 		if(~proxy.notNil) {
 			if(~paramKeys.isNil) { ~getParams.() };
 			if(paramKey.isNil or: { ~paramKeys.includes(paramKey) }) {
@@ -1133,25 +1148,73 @@ Proto {
 				"Parameter % not found in proxy %".format(paramKey, ~proxyKey).warn;
 			};
 		};
+		paramKey.debug("<< bufProxyMap:setParamKey");
 		currentEnvironment
 	};
 
 	~setBuf = { |buffer|
+		buffer.debug(">> bufProxyMap:setBuf");
 		if(~proxy.notNil and: { ~paramKey.notNil }) {
-			~proxy.set(~paramKey, buffer.bufnum);
+			~buf = buffer;
+			if(~paramValue.().asControlInput != buffer.asControlInput) {
+				~proxy.set(~paramKey, buffer.asControlInput);
+			};
+			currentEnvironment.changed(\bufKey, buffer.asControlInput);
 		};
+		buffer.debug("<< bufProxyMap:setBuf");
 		currentEnvironment
+	};
+	~paramValue = { |proxy(~proxy), paramKey(~paramKey)|
+		var pair;
+		debug(
+			if(proxy.notNil and: { paramKey.notNil }) {
+				if(proxy.nodeMap[paramKey].notNil) {
+					proxy.nodeMap[paramKey]
+				} {
+					pair = proxy.getKeysValues.detect { |pair|
+						pair[0] == paramKey
+					};
+					if(pair.notNil) { pair[1] };
+				};
+			};  // else nil
+			, "paramValue"
+		)
+	};
+
+	~keyForBuffer = { |buffer|
+		if(buffer.isKindOf(Buffer)) {
+			if(buffer.path.notNil) {
+				buffer.path.basename
+			} {
+				buffer.bufnum.asString.padLeft(4)
+			};
+		} { buffer.asString };
+	};
+	~setBuffers = { |buffers|
+		~buffers = buffers;
+		~bufKeys = buffers.collect(~keyForBuffer);
+		currentEnvironment.changed(\bufKeys, ~bufKeys);
+	};
+	~bufferForNumber = { |bufnum|
+		~buffers.detectIndex { |item| item.tryPerform(\bufnum) == bufnum };
 	};
 
 	~update = { |obj, what ... args|
+		[obj, what, args].debug(">> bufProxyMap:update");
 		switch(what)
 		{ \source } {
 			// [obj, index, channelOffset, extraArgs, now]
 			~getParams.();  // this could add new parameters
 		}
+		{ \set } {
+			if(what == ~paramKey) {
+				~setBuf.(~bufferForNumber.(args[0].asControlInput));
+			};
+		}
 		{ \clear } {
 			~free.();
 		};
+		[obj, what, args].debug("<< bufProxyMap:update");
 		currentEnvironment
 	};
 }.import((npMapping: #[getParams, setDependant, clearDependant])) => PR(\bufProxyMap);
@@ -1163,11 +1226,55 @@ PR(\abstractMappingGui).clone {
 		layout.add(~paramText = StaticText());
 		layout.add(~bufMenu = PopUpMenu());
 
+		~bufMenu.items_(~model.bufKeys)
+		.action_(e { |view|
+			var i = ~model.bufKeys.indexOfEqual(view.items[view.value]);
+			if(i.notNil) {
+				~model.setBuf(~model.buffers[i]);
+			};
+		});
+
 		currentEnvironment
 	};
 
+/*
+     23:				currentEnvironment.changed(\proxyKey, proxyKey);
+     33:			currentEnvironment.changed(\proxyKey, nil);
+     44:				currentEnvironment.changed(\paramKey, paramKey);
+     56:			currentEnvironment.changed(\bufKey, buffer.bufnum);
+     73:		currentEnvironment.changed(\bufKeys, ~bufKeys);
+*/
 	~update = { |obj, what ... args|
-
+		var oldItem, i;
+		[obj, what, args].debug(">> bufProxyMapGui:update");
+		switch(what)
+		{ \didFree } {
+			~removeResponder.();
+			defer(e { ~view.remove });
+		}
+		{ \proxyKey } {
+			defer(e { ~proxyText.string = args[0] })
+		}
+		{ \paramKey } {
+			defer(e { ~paramText.string = args[0] })
+		}
+		{ \bufKey } {  // "Key" is bufnum here
+			defer(e {
+				i = ~model.buffers.detectIndex { |buf| buf.tryPerform(\bufnum) == args[0] };
+				if(i.notNil) { ~bufMenu.value = i };
+			});
+		}
+		{ \bufKeys } {
+			if(args[0].notNil) {
+				defer(e {
+					oldItem = ~bufMenu.items[~bufMenu.value];
+					~bufMenu.items = args[0];
+					i = args[0].indexOfEqual(oldItem);
+					if(i.notNil) { ~bufMenu.value = i };
+				});
+			};
+		};
+		[obj, what, args].debug("<< bufProxyMapGui:update");
 	};
 } => PR(\bufProxyMapGui);
 
@@ -1176,9 +1283,13 @@ PR(\abstractMappingGui).clone {
 Proto {
 	~prep = {
 		~bufs = Array.new;
+		~maps = Array.new;
 		if(~space.isNil) {
 			~space = Ndef.all[\localhost] ?? { Ndef.dictFor(Server.local) }
 		};
+		// first get existing bufs
+		~space.server.cachedBuffersDo { |buf| ~bufs = ~bufs.add(buf) };
+		~bufs = ~bufs.sort { |a, b| a.bufnum < b.bufnum };
 		~makeBufWatcher.();
 		~startAliveThread.();
 		currentEnvironment
@@ -1186,6 +1297,7 @@ Proto {
 	~free = {
 		~clearBufWatcher.();
 		~stopAliveThread.();
+		~maps.copy.do { |map| map.free };
 		currentEnvironment.changed(\didFree);
 	};
 
@@ -1193,12 +1305,13 @@ Proto {
 	~addBuf = { |buf|
 		var oldBufI;
 		// buf.debug("addBuf");
-		oldBufI = ~bufs.detectIndex { |buf| buf.bufnum == buf.bufnum };
+		oldBufI = ~bufs.detectIndex { |item| item.bufnum == buf.bufnum };
 		if(oldBufI.isNil) {
 			~bufs = ~bufs.add(buf).sort { |a, b| a.bufnum < b.bufnum };
 		} {
 			~bufs[oldBufI] = buf;
 		};
+		~maps.do { |map| map.setBuffers(~bufs) };
 		currentEnvironment.changed(\addBuf, ~bufs);
 	};
 	~freeBuf = { |buf|
@@ -1255,13 +1368,62 @@ Proto {
 	};
 
 	~checkProxies = {
-		if(~prevProxyKeys != ~space.envir.keys) {
-			~prevProxyKeys = ~space.envir.keys;
-
+		var keys = ~space.envir.keys.reject { |key|
+			~space[key].rate == \scalar
+		};
+		// keys.debug(">> checkProxies");
+		if(~prevProxyKeys != keys) {
+			~prevProxyKeys = keys;
+			keys.do { |key|
+				~space[key].getKeysValues.do { |pair|
+					var param = pair[0], exists;
+					if(param.asString.containsi("buf")) {
+						if(~findMap.(key, param).isNil) {
+							~newMap.(key, param);
+						};
+						// mapsNeeded = (key: key, param: param,
+						// 	existing: ~findMap.(key, param)
+						// );
+					};
+				};
+			};
+			// maybe sort later?
 		};
 	};
-}.import((touchMapManager: #[startAliveThread, stopAliveThread, updatePeriod]))
+	~findMap = { |proxyKey, param|
+		~maps.detect { |map|
+			map = map.map;
+			map.proxyKey == proxyKey and: { map.paramKey = param }
+		};
+	};
+	~newMap = { |proxyKey, param|
+		var map, gui;
+		map = PR(\bufProxyMap).copy.put(\space, ~space).prep(~bufs, proxyKey, param/*, buf*/);
+		// gui = PR(\bufProxyMapGui).copy.prep(map, ~layout, false);  // don't add to layout!
+		if(map.notNil) {
+			// ~addView.(gui.view);
+			~maps = ~maps.add(map);
+			map.addDependant(currentEnvironment);
+			currentEnvironment.changed(\newMap, map);
+			~maps.last;
+		} { nil }
+	};
+	~update = { |obj, what|
+		var i;
+		if(what == \didFree) {
+			i = ~maps.indexOf(obj);
+			if(i.notNil) {
+				obj.removeDependant(currentEnvironment);
+				~maps.removeAt(i);
+			};
+		};
+	};
+}.import((touchMapManager: #[/*update,*/ startAliveThread, stopAliveThread, updatePeriod]))
 => PR(\bufferManager);
+
+// PR(\abstractScrollParent).clone {
+//
+// } => PR(\bufMapGuis);
 
 Proto {
 	~prep = { |model, layout|
@@ -1290,6 +1452,7 @@ Proto {
 	};
 
 	~update = { |obj, what ... args|
+		var gui;
 		switch(what)
 		{ \addBuf } {
 			defer(e {
@@ -1301,6 +1464,10 @@ Proto {
 		}
 		{ \freeBuf } {
 			~setBufStrings.(~bufStrings.(args[0]))
+		}
+		{ \newMap } {
+			gui = PR(\bufProxyMapGui).copy.prep(args[0], ~layout, false);  // don't add to layout!
+			~scroller.addView(gui.view);
 		}
 		{ \didFree } {
 			~free.();
@@ -1318,6 +1485,7 @@ Proto {
 				~bufList = ListView()
 			)
 		);
+		~scroller = PR(\abstractScrollParent).copy.prep(~view, ~view.layout);
 
 		~view.onClose = e { ~free.() };
 
@@ -1367,21 +1535,26 @@ Proto {
 		~bnds = ~bounds.();
 		~window = Window(name, ~bnds).background_(Library.at(\workshopGuiTheme, \windowBG));
 		~layout = VLayout(*(
-			~rows = HLayout(*(
-				~oscMgrView = View().background_(Library.at(\workshopGuiTheme, \containerBG));
-			))
+			~rows = HLayout(
+				~oscMgrView = View().background_(Library.at(\workshopGuiTheme, \containerBG)),
+				~bufMgrView = View().background_(Library.at(\workshopGuiTheme, \containerBG)),
+			)
 		));
 		~window.layout = ~layout;
 		~oscMgr = PR(\touchManager).copy.prep(~oscMgrView, name);
 		~oscMapMgr = PR(\touchMapManager).copy
 		.put(\space, ~space)
 		.prep(~oscMgrView, ~oscMgr.layout);
+		~bufMgr = PR(\bufferManager).copy.put(\space, ~space).prep;
+		~bufMgrView.layout = VLayout();
+		~bufMgrGui = PR(\bufferManagerGui).copy.prep(~bufMgr, ~bufMgrView.layout);
 		~window.onClose_(e { ~free.() }).front;
 		currentEnvironment
 	};
 	~free = {
 		~oscMapMgr.free; ~oscMapMgr = nil;
 		~oscMgr.free; ~oscMgr = nil;
+		~bufMgr.free; ~bufMgr = nil;
 		// free others
 		if(~window.isClosed.not) {
 			~window.onClose_(nil).close;
