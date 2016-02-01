@@ -1176,12 +1176,12 @@ Proto {
 	};
 
 	~keyForBuffer = { |buffer|
-		var suffix;
+		var annotation;
 		if(buffer.isKindOf(Buffer)) {
 			if(buffer.path.notNil) {
-				suffix = buffer.getHalo(\suffix);
-				if(suffix.notNil) {
-					buffer.path.basename + suffix
+				annotation = buffer.getHalo(\annotation);
+				if(annotation.notNil) {
+					annotation + buffer.path.basename
 				} {
 					buffer.path.basename
 				};
@@ -1225,6 +1225,9 @@ PR(\abstractMappingGui).clone {
 		layout.add(~proxyText = StaticText());
 		layout.add(~paramText = StaticText());
 		layout.add(~bufMenu = PopUpMenu());
+
+		~proxyText.maxWidth_(80);
+		~paramText.maxWidth_(80);
 
 		~bufMenu.items_(~model.bufKeys)
 		.action_(e { |view|
@@ -1315,14 +1318,28 @@ Proto {
 		currentEnvironment.changed(\addBuf, ~bufs);
 	};
 	~freeBuf = { |buf|
+		var bufnum = buf.bufnum;
+		buf.clearHalo;  // just in case
+		// b/c buf was object-copied after load, there are two Halo entries
+		// "buf.clearHalo" knocks out the first.
+		// this scans for other matching buffers
+		Halo.lib.dictionary.keys.do { |obj|
+			if(obj.isKindOf(Buffer) and: {
+				// nil bufnum means Buffer was freed, don't need to keep annotation
+				obj.bufnum.isNil or: { obj.bufnum == bufnum }
+			}) {
+				obj.clearHalo;
+			};
+		};
 		// 'if' is to prevent an infinite loop:
 		// server /done --> watcher --> here --> free --> server /done, etc.
-		if(buf.bufnum.notNil) { buf.free };
+		if(bufnum.notNil) { buf.free };
 		~bufs.remove(buf);
 		currentEnvironment.changed(\freeBuf, ~bufs);
 	};
 	~freeBufnum = { |bufnum|
-		var buf = ~bufs.detect { |buf| buf.bufnum == bufnum };
+		var buf;
+		buf = ~bufs.detect { |buf| buf.bufnum == bufnum };
 		if(buf.notNil) {
 			~freeBuf.(buf);
 		};
@@ -1353,7 +1370,7 @@ Proto {
 						if(buf.notNil) {
 							// .copy insulates from the fact that .free clears instance vars
 							bufCopy = buf.copy;
-							// annotations (esp. channel suffix for multichannel files)
+							// annotations (esp. channel annotation for multichannel files)
 							if(buf.getHalo.notNil) {
 								Halo.put(bufCopy, buf.getHalo)
 							};
@@ -1452,9 +1469,9 @@ Proto {
 	};
 	~bufStrings = { |bufs|
 		bufs.collect { |buf|
-			var suffix = buf.getHalo(\suffix);
-			if(suffix.notNil) {
-				buf.path.basename + suffix
+			var annotation = buf.getHalo(\annotation);
+			if(annotation.notNil) {
+				annotation + buf.path.basename
 			} {
 				buf.path.basename
 			};
@@ -1527,8 +1544,12 @@ Proto {
 				Buffer.read(s, path);  // model's watcher will catch the successful load
 			} {
 				sf.numChannels.do { |ch|
+					var annotation = if(sf.numChannels == 2) {
+						"LR".at(ch)
+					} { "CH" ++ ch };
 					Buffer.readChannel(s, path, channels: [ch])
-					.addHalo(\suffix, "CH" ++ ch);
+					.addHalo(\annotation, "[%]".format(annotation))
+					.addHalo(\channelIndex, ch);  // for saving/loading buffer set
 				};
 			};
 		} {

@@ -463,5 +463,15 @@ PR(\bufferManager).v[\update].postcs
 x = Point(0, 0);
 x.addHalo(\ann, "annotation");
 x.getHalo
+Halo.lib
+x.clearHalo;
+Halo.lib
+Halo.lib.keysValuesDo { |k, v| [k, v].postln }; ""
+Library.browse
+Halo.lib.do { |... args| args.postln }; ""
+
+Halo.lib.dictionary.keysValuesDo { |k, v| [k, v].postln }; ""
 
 BP(\mw).bufMgr.bufs
+
+s.cachedBufferAt(0).free;
