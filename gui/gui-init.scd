@@ -1232,26 +1232,11 @@ Proto {
 		}
 	};
 
-	~restoreState = { |proxyKey, paramKey, channel, path|
-		var buf, tempChannel;
+	~restoreState = { |proxyKey, paramKey, buf|
 		~setProxyKey.(proxyKey);
 		~setParamKey.(paramKey);
-		buf = ~buffers.detect { |item|
-			item.path == path and: {
-				tempChannel = item.getHalo(\channelIndex);
-				tempChannel == channel
-			}
-		};
 		if(buf.notNil) {
 			~setBuf.(buf);
-		} {
-			"Buffer map restoreState: buffer % not loaded".format(
-				if(channel.notNil) {
-					path + "(channel" + channel ++ ")"
-				} {
-					path
-				}
-			).warn;
 		};
 		currentEnvironment
 	};
@@ -1574,19 +1559,28 @@ Proto {
 	// note here: Ndefs must exist already!
 	// We can't create maps for future Ndefs
 	~restoreBufMaps = { |file|
-		var line, map, proxy, param, channel, path;
+		var line, map, buf, proxy, param, channel, path, tempChannel;
 		while {
 			line = file.getLine;
 			line.notNil
 		} {
 			#proxy, param, channel, path = line.interpret;
 			map = ~findMap.(proxy, param);
+			buf = ~bufs.detect { |item|
+				item.path == path and: {
+					tempChannel = item.getHalo(\channelIndex);
+					tempChannel == channel
+				}
+			};
 			if(map.notNil) {
-				map.restoreState(proxy, param, channel, path)
+				map.restoreState(proxy, param, buf)
 			} {
 				"Proxy % with param % not found for buffer %"
-				.format(proxy, param, path.basename)
+				.format(proxy.asCompileString, param.asCompileString, path.basename)
 				.warn;
+				// set the (future) proxy's NodeMap now
+				// when you create the proxy later, it will map to the right buffer!
+				~space[proxy].set(param, buf.bufnum);
 			}
 		};
 		line
