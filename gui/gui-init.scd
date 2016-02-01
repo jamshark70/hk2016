@@ -1519,7 +1519,7 @@ Proto {
 	~loadBufferSet = { |path, errAction|
 		var file = File(path, "r"), lastLine;
 		if(file.isOpen) {
-			{
+			~space.server.waitForBoot {  // note: waitForBoot also implies .fork(AppClock)
 				protect {
 					lastLine = file.getLine;
 					if(lastLine != "BufferSet") {
@@ -1534,7 +1534,7 @@ Proto {
 					file.close;
 					if(error.notNil) { errAction.(\readError) };
 				};
-			}.fork(AppClock);
+			};
 		} {
 			"File % could not be opened for reading".format(path).warn;
 			errAction.(\openError);
