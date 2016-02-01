@@ -1176,9 +1176,15 @@ Proto {
 	};
 
 	~keyForBuffer = { |buffer|
+		var suffix;
 		if(buffer.isKindOf(Buffer)) {
 			if(buffer.path.notNil) {
-				buffer.path.basename
+				suffix = buffer.getHalo(\suffix);
+				if(suffix.notNil) {
+					buffer.path.basename + suffix
+				} {
+					buffer.path.basename
+				};
 			} {
 				buffer.bufnum.asString.padLeft(4)
 			};
@@ -1335,7 +1341,7 @@ Proto {
 	~makeBufWatcher = {
 		if(~bufWatcher.isNil) {
 			~bufWatcher = OSCFunc(e { |msg, time, addr|
-				var server, buf;
+				var server, buf, bufCopy;
 				case
 				{ msg[1] == '/b_free' } {
 					~freeBufnum.(msg[2]);
@@ -1346,7 +1352,12 @@ Proto {
 						buf = Buffer.cachedBufferAt(server, msg[2]);
 						if(buf.notNil) {
 							// .copy insulates from the fact that .free clears instance vars
-							~addBuf.(buf.copy);
+							bufCopy = buf.copy;
+							// annotations (esp. channel suffix for multichannel files)
+							if(buf.getHalo.notNil) {
+								Halo.put(bufCopy, buf.getHalo)
+							};
+							~addBuf.(bufCopy);
 						} { "Buffer number % not found in server %".format(msg[2], server).warn };
 					} {
 						"/done received but no Server object found for %".format(addr).warn;
@@ -1385,7 +1396,6 @@ Proto {
 	};
 	~findMap = { |proxyKey, param|
 		~maps.detect { |map|
-			map = map.map;
 			map.proxyKey == proxyKey and: { map.paramKey = param }
 		};
 	};
@@ -1441,7 +1451,14 @@ Proto {
 		currentEnvironment
 	};
 	~bufStrings = { |bufs|
-		bufs.collect { |buf| buf.path.basename }
+		bufs.collect { |buf|
+			var suffix = buf.getHalo(\suffix);
+			if(suffix.notNil) {
+				buf.path.basename + suffix
+			} {
+				buf.path.basename
+			};
+		}
 	};
 
 	~update = { |obj, what ... args|
@@ -1506,7 +1523,14 @@ Proto {
 	~readBuf = { |path|
 		var sf = SoundFile.openRead(path);
 		if(sf.notNil) {
-			Buffer.read(s, path);  // model's watcher will catch the successful load
+			if(sf.numChannels == 1) {
+				Buffer.read(s, path);  // model's watcher will catch the successful load
+			} {
+				sf.numChannels.do { |ch|
+					Buffer.readChannel(s, path, channels: [ch])
+					.addHalo(\suffix, "CH" ++ ch);
+				};
+			};
 		} {
 			"Could not open %: Either not found, or not a soundfile"
 			.format(path.basename)

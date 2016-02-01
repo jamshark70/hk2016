@@ -422,7 +422,7 @@ Object.dependantsDictionary.keysValuesDo { |key, value|
 
 b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
 
-Ndef(\buf, { |bufnum = 1, amp = 0.1| (PlayBuf.ar(1, bufnum, loop: 1) * amp).dup });
+Ndef(\buf, { |bufnum, amp = 0.1| (PlayBuf.ar(1, bufnum, loop: 1) * amp).dup });
 
 Ndef(\buf).play;
 Ndef(\buf).stop;
@@ -459,3 +459,9 @@ BP(\mw).bufMgr.listVars
 
 PR(\bufferManager).listMethods
 PR(\bufferManager).v[\update].postcs
+
+x = Point(0, 0);
+x.addHalo(\ann, "annotation");
+x.getHalo
+
+BP(\mw).bufMgr.bufs
