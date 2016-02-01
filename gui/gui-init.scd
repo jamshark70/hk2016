@@ -1469,14 +1469,12 @@ Proto {
 
 	~makeViews = {
 		~parentLayout.add(~view = View());
-		~view.layout = HLayout(
-			VLayout(
-				HLayout(
-					~readButton = Button(),
-					~freeButton = Button(),
-				),
-				~bufList = ListView()
-			)
+		~view.layout = VLayout(
+			HLayout(
+				~readButton = Button(),
+				~freeButton = Button(),
+			),
+			~bufList = ListView()
 		);
 		~scroller = PR(\abstractScrollParent).copy.prep(~view, ~view.layout);
 
@@ -1484,14 +1482,24 @@ Proto {
 
 		~bufList.items = ~bufStrings.(~model.bufs);
 
-		~readButton.states_([["Load file"]])
+		~readButton.states_([["Load audio file"]])
 		.action_(e {
-			Dialog.openPanel(e { |path| ~readBuf.(path) })
+			~model.space.server.waitForBoot(e {
+				Dialog.openPanel(e { |path| ~readBuf.(path) })
+			});
 		});
 
 		~freeButton.states_([["Free buffer"]])
 		.action_(e {
-			~model.freeBufIndex(~bufList.value);
+			if(~bufList.value.notNil) {
+				~model.freeBufIndex(~bufList.value);
+			} {
+				if(~bufList.items.size == 0) {
+					"No buffers to free".warn;
+				} {
+					"First, select a buffer to free from the list".warn;
+				}
+			};
 		});
 	};
 
