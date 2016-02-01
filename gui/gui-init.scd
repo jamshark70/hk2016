@@ -935,11 +935,10 @@ PR(\abstractScrollParent).clone {
 		~menuRow.layout = HLayout(
 			~addButton = PopUpMenu(),
 			~saveButton = Button(),
-			~loadButton = Button(),
-			nil  // spacer
+			~loadButton = Button()
 		).margins_(~margins).spacing_(~spacing);
 
-		~addButton.maxWidth_(150) // .fixedSize_(Size(150, 20))
+		~addButton//.maxWidth_(150) // .fixedSize_(Size(150, 20))
 		.items_(["Add OSC mapping", "-- to Ndef param", "-- to Pdefn", "-- function"])
 		.action_(e { |view|
 			var map, gui;
@@ -954,11 +953,11 @@ PR(\abstractScrollParent).clone {
 			view.value = 0;
 		});
 
-		~saveButton.maxWidth_(150)
+		~saveButton.maxWidth_(100)
 		.states_([["Save"]])
 		.action_(e { ~saveDialog.() });
 
-		~loadButton.maxWidth_(150)
+		~loadButton.maxWidth_(100)
 		.states_([["Load"]])
 		.action_(e { ~loadDialog.() });
 	};
@@ -1035,6 +1034,7 @@ PR(\abstractScrollParent).clone {
 		var file = File(path, "w"), errCode = \ok;
 		if(file.isOpen) {
 			protect {
+				file << "OSCMaps\n";
 				~maps.do { |map|
 					file << map.map.saveState << "\n";
 				};
@@ -1054,6 +1054,12 @@ PR(\abstractScrollParent).clone {
 		file = File(path, "r");
 		if(file.isOpen) {
 			protect {
+				line = file.getLine;
+				if(line != "OSCMaps") {
+					Error("File % is not a list of OSC control mappings"
+						.format(path.basename)
+					).throw;
+				};
 				states = Array.new;
 				while { (line = file.getLine(2048)).notNil } {
 					states = states.add(line.interpret);
@@ -1214,6 +1220,38 @@ Proto {
 		}
 		{ \clear } {
 			~free.();
+		};
+		currentEnvironment
+	};
+
+	~saveState = {
+		if(~buf.isKindOf(Buffer)) {
+			[~proxyKey, ~paramKey, ~buf.getHalo(\channelIndex), ~buf.path]
+		} {
+			"nil"
+		}
+	};
+
+	~restoreState = { |proxyKey, paramKey, channel, path|
+		var buf, tempChannel;
+		~setProxyKey.(proxyKey);
+		~setParamKey.(paramKey);
+		buf = ~buffers.detect { |item|
+			item.path == path and: {
+				tempChannel = item.getHalo(\channelIndex);
+				tempChannel == channel
+			}
+		};
+		if(buf.notNil) {
+			~setBuf.(buf);
+		} {
+			"Buffer map restoreState: buffer % not loaded".format(
+				if(channel.notNil) {
+					path + "(channel" + channel ++ ")"
+				} {
+					path
+				}
+			).warn;
 		};
 		currentEnvironment
 	};
@@ -1413,7 +1451,7 @@ Proto {
 	};
 	~findMap = { |proxyKey, param|
 		~maps.detect { |map|
-			map.proxyKey == proxyKey and: { map.paramKey = param }
+			map.proxyKey == proxyKey and: { map.paramKey == param }
 		};
 	};
 	~newMap = { |proxyKey, param|
@@ -1437,6 +1475,121 @@ Proto {
 				~maps.removeAt(i);
 			};
 		};
+	};
+
+	~saveDialog = {
+		defer(e {
+			Dialog.savePanel(e { |path| ~saveBufferSet.(path) });
+		});
+		currentEnvironment
+	};
+
+	~loadDialog = {
+		defer(e {
+			Dialog.openPanel(e { |path| ~loadBufferSet.(path) });
+		});
+		currentEnvironment
+	};
+
+	~saveBufferSet = { |path, errAction|
+		var file = File(path, "w");
+		if(file.isOpen) {
+			protect {
+				file << "BufferSet\n";
+				~bufs.do { |buf|
+					var channel = buf.getHalo(\channelIndex);
+					file <<< [channel, buf.path] << "\n";
+				};
+				file << "BufferMaps\n";
+				~maps.do { |map|
+					file <<< map.saveState << "\n";
+				};
+			} { |error|
+				file.close;
+				if(error.notNil) { errAction.(\saveError) };
+			};
+			errAction.(\ok);  // on error, it won't reach here
+		} {
+			"File % could not be opened for writing".format(path).warn;
+			errAction.(\openError);
+		};
+		currentEnvironment
+	};
+
+	~loadBufferSet = { |path, errAction|
+		var file = File(path, "r"), lastLine;
+		if(file.isOpen) {
+			{
+				protect {
+					lastLine = file.getLine;
+					if(lastLine != "BufferSet") {
+						Error("File % is not a buffer set".format(path.basename)).throw;
+					};
+					lastLine = ~restoreBufs.(file);
+					if(lastLine != "BufferMaps") {
+						Error("Buffer set % has an invalid format".format(path.basename)).throw;
+					};
+					~restoreBufMaps.(file);
+				} { |error|
+					file.close;
+					if(error.notNil) { errAction.(\readError) };
+				};
+			}.fork(AppClock);
+		} {
+			"File % could not be opened for reading".format(path).warn;
+			errAction.(\openError);
+		};
+		errAction.(\pending);
+		currentEnvironment
+	};
+
+	~restoreBufs = { |file|
+		var line, channel, path, annotation, sf;
+		~bufs.do { |buf|
+			buf.free;
+			~space.server.sync;
+		};
+		while {
+			line = file.getLine;
+			line.notNil and: { line != "BufferMaps" }
+		} {
+			#channel, path = line.interpret;
+			if(channel.isNil) {
+				Buffer.read(~space.server, path);
+			} {
+				sf = SoundFile.openRead(path);
+				sf.close;
+				annotation = if(sf.numChannels == 2) {
+					"LR".at(channel)
+				} { "CH" ++ channel };
+				Buffer.readChannel(~space.server, path, channels: channel.asArray)
+				.addHalo(\channelIndex, channel)
+				.addHalo(\annotation, "[%]".format(annotation))
+			};
+			s.sync;
+		};
+		line
+	};
+
+	// note here: Ndefs must exist already!
+	// We can't create maps for future Ndefs
+	~restoreBufMaps = { |file|
+		var line, map, proxy, param, channel, path;
+		while {
+			line = file.getLine;
+			line.notNil
+		} {
+			#proxy, param, channel, path = line.interpret;
+			map = ~findMap.(proxy, param);
+			if(map.notNil) {
+				map.restoreState(proxy, param, channel, path)
+			} {
+				"Proxy % with param % not found for buffer %"
+				.format(proxy, param, path.basename)
+				.warn;
+			}
+		};
+		line
 	};
 }.import((touchMapManager: #[/*update,*/ startAliveThread, stopAliveThread, updatePeriod]))
 => PR(\bufferManager);
@@ -1508,6 +1661,10 @@ Proto {
 				~readButton = Button(),
 				~freeButton = Button(),
 			),
+			HLayout(
+				~saveButton = Button(),
+				~loadButton = Button()
+			),
 			~bufList = ListView()
 		);
 		~scroller = PR(\abstractScrollParent).copy.prep(~view, ~view.layout);
@@ -1517,6 +1674,7 @@ Proto {
 		~bufList.items = ~bufStrings.(~model.bufs);
 
 		~readButton.states_([["Load audio file"]])
+		.fixedHeight_(20)
 		.action_(e {
 			~model.space.server.waitForBoot(e {
 				Dialog.openPanel(e { |path| ~readBuf.(path) })
@@ -1524,6 +1682,7 @@ Proto {
 		});
 
 		~freeButton.states_([["Free buffer"]])
+		.fixedHeight_(20)
 		.action_(e {
 			if(~bufList.value.notNil) {
 				~model.freeBufIndex(~bufList.value);
@@ -1535,10 +1694,19 @@ Proto {
 				}
 			};
 		});
+
+		~saveButton.states_([["Save buffer set"]])
+		.fixedHeight_(20)
+		.action_(e { ~model.saveDialog() });
+
+		~loadButton.states_([["Load buffer set"]])
+		.fixedHeight_(20)
+		.action_(e { ~model.loadDialog() });
 	};
 
 	~readBuf = { |path|
 		var sf = SoundFile.openRead(path);
+		sf.close;  // only to get numChannels
 		if(sf.notNil) {
 			if(sf.numChannels == 1) {
 				Buffer.read(s, path);  // model's watcher will catch the successful load

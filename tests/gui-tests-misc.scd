@@ -2,6 +2,8 @@
 BP(\mw).free;
 PR(\mobileWorkshopGUI) => BP(\mw);
 
+Ndef(\buf, { |bufnum, amp = 0.1| (PlayBuf.ar(1, bufnum, loop: 1) * amp).dup });
+
 
 w.view.children
 
@@ -475,3 +477,6 @@ Halo.lib.dictionary.keysValuesDo { |k, v| [k, v].postln }; ""
 BP(\mw).bufMgr.bufs
 
 s.cachedBufferAt(0).free;
+
+// save/load
+BP(\mw).bufMgr.maps[0].listVars
