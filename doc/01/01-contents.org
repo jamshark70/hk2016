@@ -1,0 +1,145 @@
+#+startup: beamer
+
+* Workshop introduction
+** Workshop introduction
+*** Who am I?
+**** Composer, programmer, nerd
+     - Ph.D., music composition, Duke University (2001).
+     - Now: Associate Professor, Xinghai Conservatory, Guangzhou.
+     - Subjects: Electronic music production, Film music.
+**** Special interests:
+     - Danceclub music.
+     - Real-time performance with computers.
+
+#+call: makegloss :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: makegloss
+
+#+name: classgloss
+#+call: makegloss(tbl=class,glosstype="class") :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: classgloss
+
+#+name: mthgloss
+#+call: makegloss(tbl=mth,glosstype="mth") :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: mthgloss
+
+#+call: ugengloss :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: ugengloss
+
+*** Workshop goals
+**** After this workshop, you should understand:
+     - How to receive information from external controls;
+     - How to apply external data to audio processes;
+     - Basics of \egls{granular synthesis}.
+     - Basic audio programming concepts, in SuperCollider.
+**** At the end, we'll try to perform some music for computer ensemble!
+
+*** Organization of the material
+**** Three types of material in this workshop:
+     - General :: Useful for all interactive hardware and software. \\
+       Your main take-away!
+     - OSC/SC :: Specific to Open Sound Control and SuperCollider. \\
+       "Implementation details" change with the device and software.
+     - Workshop :: The specific way of using OSC and SC for this workshop. \\
+       Useful to play with, but don't limit yourself to them.
+**** The /general/ principles are the most important to remember.
+     You'll see them again and again, in every environment.
+
+*** Overview
+**** General outline:
+     - Theoretical background.
+     - Setup and usage of the SuperCollider environment.
+     - Open Sound Control and SuperCollider communication.
+     - Granular synthesis fundamentals.
+     - Workshop performance interface.
+     - Preparing materials for the final performance.
+
+* Interactive audio technology
+** Interactive audio technology
+*** Interactive audio technology
+**** *Interactive audio:* The sound responds in real time.
+     Responds to what? Somebody's /action/.
+     - People work in the physical world.
+     - Computers work with information. \pause
+**** The key to interaction:
+     #+BEGIN_CENTER
+     Physical action $\to$ data (numbers).
+     #+END_CENTER
+
+*** Devices for interaction
+**** /Action $\to$ data/ requires a control device.
+     - *Mouse:* Points at one thing at a time.
+     - *Keyboard:* On/off. No smooth changes.
+     - *MIDI:* Musically useful. Steers your mind towards "playing an instrument."
+     - *Game controllers:* Possible; not often used with computers.
+     - *Touchscreens:* Everybody has one! \\
+       /Lemur/ is specially designed for electronic arts (but $$$!).
+     - *TUIO:* Tangible User Interface Objects (e.g. ReacTable).
+     - *Audio/video signals:* Analysis of microphone or webcam input.
+     - *Sensors, custom devices:* E.g. Arduino, Leap Motion.
+
+*** This workshop: Touchscreens
+**** We'll use phones and tablets in this workshop.
+     Mobile control app: *TouchOSC.* \\
+     Other apps: 
+     - /mrmr/.
+     - /Control/ (Charlie Roberts).
+     - /OSC Surface/.
+     - /QuickOSC/.
+     Many more. Search your app store for "OSC."
+
+** About controls
+*** Buttons and faders
+**** Left							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.65
+     :END:
+***** Controls divide into two categories:
+      - Buttons (按钮) :: Discrete events. \\
+        /When/ something should happen.
+      - Faders (推子) :: Continuous levels. \\
+       	E.g., pitch, volume, pan, speed, etc.
+**** Right							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+     [[../01/img/touchosc-screen.jpg]]
+
+*** Buttons = triggers
+**** Generally, buttons turn things on or off.
+     - You need to know /what/ happened, /when/.
+     - You don't need a lot of detail.
+     - TouchOSC buttons are either 0 or 1.
+**** MIDI keyboards.
+     - A MIDI keyboard is basically an array of buttons!
+     - /Note-on/ and /note-off/.
+     - Note number identifies /which/ trigger.
+     - Velocity is extra detail, but /doesn't change/ after note-on.
+
+*** Normalized range *(IMPORTANT)*
+**** *Solution:* \eGls{normalized} vs. actual data /ranges/.
+     *Range:* The lowest and highest meaningful numbers for a control.
+     - Frequency: 20--20,000 Hz
+     - Volume: 0--1 (same as $-\infty$--0 dB).
+     - Pan: --1 to 1.
+    A \egls{normalized} range is always 0--1.
+    - MIDI uses 0--127: $midi \div 127$ is normalized.
+**** Physical controls and displays use /normalized/ ranges.
+     They don't have to care how the number will be used.
+
+*** Data range mapping
+**** To use external information, /map/ it onto a real range.
+     For example, panning.
+     - Real range = --1 to 1.
+     - Incoming \gls{normalized} range: 0 to 1.
+     - The real range is twice as wide: \\
+       Multiply normal range by 2 $\to$ 0 to 2.
+     - The real range is shifted lower: \\
+       Subtract one: 0 to 2 $\to$ --1 to 1.
+     $pan = norm \times 2 - 1$
+
+
+
+* Footnotes
+
+[fn:ecfb5ae3] Heard in a lecture by Jeffrey Stolet (U of Oregon).
+

@@ -1,0 +1,66 @@
+* Glossary							   :noexport:
+#+name: gloss
+| Term               | Plural | Description                                                                                        |
+|--------------------+--------+----------------------------------------------------------------------------------------------------|
+| granular synthesis |        | A technique for generating complex sounds from short, overlapping segments of recorded audio       |
+| normalized         |        | Describes a standard range associated with a physical control or on-screen display. Typically 0--1 | 
+  
+
+* Classes 							   :noexport:
+#+name: class
+| Term | Plural | Description |
+|------+--------+-------------|
+
+
+* Methods							   :noexport:
+#+name: mth
+| Term | Plural | Description |
+|------+--------+-------------|
+
+
+* UGens								   :noexport:
+#+name: ugens
+| Type | Term | Description | Arguments |
+|------+------+-------------+-----------|
+
+
+* src blocks 							   :noexport:
+
+#+name: makegloss
+#+begin_src emacs-lisp :var tbl=gloss glosstype='nil :exports none :results value latex
+  (let ((str "")
+        (gltype (if glosstype (format "type=%s," glosstype) "")))
+    ;(pop tbl)
+    ;(pop tbl)
+    (while tbl
+      (let ((item (pop tbl)))
+        (setq str
+              (concat str
+                      (format "\\newglossaryentry{%s}{%sname={%s},%sdescription={%s}}\n"
+                              (car item)
+                              gltype
+                              (pop item)
+                              (let ((plural (pop item)))
+                                (if (string= plural "")
+                                    ""
+                                  (format "plural={%s}," plural)))
+                              (car item))))))
+    str)
+#+end_src
+
+#+name: ugengloss
+#+begin_src emacs-lisp :var tbl=ugens :exports none :results value latex
+(let ((str ""))
+  ;(pop tbl)
+  ;(pop tbl)
+  (while tbl
+    (let ((item (car tbl)))
+      (pop item)
+      (setq str (concat str (format "\\newglossaryentry{%s}{type=ugen,name={%s},description={%s. Inputs: (%s)}}\n"
+  		   (car item)
+  		   (pop item)
+  		   (pop item)
+  		   (car item))))
+      (setq tbl (cdr tbl))))
+  str)
+#+end_src
