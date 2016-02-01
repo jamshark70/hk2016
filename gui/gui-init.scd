@@ -863,6 +863,7 @@ PR(\abstractMappingGui).clone {
 Proto {
 	~prep = { |parent, layout, bounds|
 		~parentView = parent;
+		~parentLayout = layout;
 		if(layout.notNil) {
 			layout.add(~scrollView = ScrollView());
 		} {
@@ -929,9 +930,9 @@ PR(\abstractScrollParent).clone {
 	~margins = #[4, 1];
 	~spacing = 4;
 	~makeViews = {
-		var layout;
-		~addView.(~menuRow = View().fixedHeight_(22));
-		~menuRow.layout = layout = HLayout(
+		~parentLayout.insert(~menuRow = View().fixedHeight_(22), 0);
+
+		~menuRow.layout = HLayout(
 			~addButton = PopUpMenu(),
 			~saveButton = Button(),
 			~loadButton = Button(),
@@ -954,11 +955,11 @@ PR(\abstractScrollParent).clone {
 		});
 
 		~saveButton.maxWidth_(150)
-		.states_([["Save maps"]])
+		.states_([["Save"]])
 		.action_(e { ~saveDialog.() });
 
 		~loadButton.maxWidth_(150)
-		.states_([["Load maps"]])
+		.states_([["Load"]])
 		.action_(e { ~loadDialog.() });
 	};
 
@@ -1534,9 +1535,11 @@ Proto {
 		));
 		~window.layout = ~layout;
 		~oscMgr = PR(\touchManager).copy.prep(~oscMgrView, name);
+		~oscMgr.layout.add(~oscMapMgrView = View());
+		~oscMapMgrView.layout = VLayout().margins_(0).spacing_(4);
 		~oscMapMgr = PR(\touchMapManager).copy
 		.put(\space, ~space)
-		.prep(~oscMgrView, ~oscMgr.layout);
+		.prep(~oscMapMgrView, ~oscMapMgrView.layout);
 		~bufMgr = PR(\bufferManager).copy.put(\space, ~space).prep;
 		~bufMgrView.layout = VLayout();
 		~bufMgrGui = PR(\bufferManagerGui).copy.prep(~bufMgr, ~bufMgrView.layout);
