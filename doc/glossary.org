@@ -1,9 +1,13 @@
 * Glossary							   :noexport:
 #+name: gloss
-| Term               | Plural | Description                                                                                        |
-|--------------------+--------+----------------------------------------------------------------------------------------------------|
-| granular synthesis |        | A technique for generating complex sounds from short, overlapping segments of recorded audio       |
-| normalized         |        | Describes a standard range associated with a physical control or on-screen display. Typically 0--1 | 
+| Term               | Plural | Description                                                                                                  |
+|--------------------+--------+--------------------------------------------------------------------------------------------------------------|
+| curve factor       |        | A number that "bends" a linear mapping into a curve. The larger the number, the more extreme the curve       |
+| exponential        |        | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level |
+| granular synthesis |        | A technique for generating complex sounds from short, overlapping segments of recorded audio                 |
+| linear             |        | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level             |
+| normalized         |        | Describes a standard range associated with a physical control or on-screen display. Typically 0--1           |
+| smoothing filter   |        | Reduces jitter in unstable signals. Common smoothing filters are /moving average/ and /moving median/        | 
   
 
 * Classes 							   :noexport:
