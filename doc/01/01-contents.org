@@ -207,6 +207,238 @@ $pan = norm \times 2 - 1$
 	- /Normalize/ the raw data if needed.
 	- Then convert to the desired range.
 
+* Getting started with SuperCollider
+** SC architecture
+*** SC is three applications
+**** Really? /Three/ applications?
+     Yes. They work together:
+     - \egls{scide}: SC Integrated Development Environment.
+       - Code editor, display, documentation. \pause
+     - \egls{sclang}: SC language.
+       - IDE sends code to sclang.
+       - sclang runs the code, sends printed output back to IDE. \pause
+     - \egls{scsynth}: SC synthesis server.
+       - sclang sends \gls{OSC} (Open Sound Control) messages to scsynth.
+       - scsynth sends audio to the hardware.
+       - May also reply to sclang.
+
+*** SC appearance
+    Linux, here.
+    #+begin_center
+    #+attr_latex: :width 1.0\textwidth
+    [[../01/img/sc-with-guis.pdf]]
+    #+end_center
+
+*** Server/client design
+**** *Server/client* design
+     :PROPERTIES:
+     :BEAMER_act: presentation
+     :END:
+     - Server does heavier work (e.g., databases).
+     - Client makes requests of the server.
+**** How does this work for audio?
+     - *Brain:* The client (SC language) sends messages to the server.\\
+       /Open Sound Control/ (\gls{OSC}) protocol.
+       - "Here's a /synthesis definition/."
+       - "Use that definition to make noise."
+     - *Brawn:* The server calculates the audio and sends to the hardware.
+
+** Using the Integrated Development Environment
+*** Usage: IDE
+**** The IDE is your main interface.
+     IDE elements:
+     - *Code panel:* Tabbed view of code documents.
+     - *Docklets*
+       - /Post window/: Printed results from SC language.
+       - /Documents/ panel: List of all open tabs.
+       - /Help browser/: Look up just about anything.
+     - *Tool panel*: Find/replace, command line, etc.
+     - *Status bar*
+       - Language and server status.
+       - Server control (click on the server status).
+
+*** Asking for help
+**** Help system keyboard shortcuts
+     - Ctrl-D :: Look up help for the keyword under the cursor.
+     - Ctrl-Shift-D :: Pop up a box where you can type the search term.
+**** Try it
+     - Type \cd{SinOsc} into the code window.
+     - Hit \ks{Ctrl-D}.
+       - SC reads the help index the first time in the session.
+       - It's faster after that.
+**** Important help browser features
+     - "Search" and "Browse" pages.
+     - Table of contents in each help page.
+
+*** Code panel
+**** Run code: \ks{Ctrl-Return}
+    - Runs a code block, selected code or the current line.
+    - /Code block/: \cd{(} at the beginning, \cd{)} at the end.\\
+      Convenient to run several lines at once.
+#+name: codeblock
+#+Caption: A block of code, in parentheses.
+#+begin_src {SuperCollider} -i :extract=t
+(
+(1..10).do { |i|
+   i.postln;
+};
+)
+#+End_src
+**** Auto-indentation
+     The editor will automatically indent the code according to the grouping levels.
+     Consistent indentation makes the code easier to read.
+
+*** Code panel: Auto-completion
+**** Auto-completion
+     The editor can help you type certain names and remember parameter lists.
+     1. Type \cd{Sin}. SC knows which /classes/ begin with those letters. Choose \cd{SinOsc}.
+     2. Type a dot. SC knows which /messages/ \cd{SinOsc} understands. Choose \cd{ar}.
+     3. Type \cd{(}. SC knows the inputs of \cd{SinOsc.ar} and shows them to you.
+**** Keystrokes for auto completion:
+     - Ctrl-space :: Complete a name.
+     - Ctrl-shift-space :: Complete a parameter list inside \cd{()}.
+
+** Error messages
+*** TODO Glossary markup for /class/ and /method/		   :noexport:
+*** Troubleshooting mistakes
+**** You'll make mistakes---maybe a lot, early on.
+     SC gives you detailed error text to help you understand what went wrong.
+**** Two main categories of errors:
+     - Parse errors :: The code doesn't follow SC's rules.\\
+       Typo in a \gls{class} name, or another unexpected element.
+     - Runtime errors :: The code doesn't do the right thing.\\
+       Includes typos in method names.
+
+*** Parse errors
+**** Parse errors are usually typos, such as:
+     - Misspelled \glspl{class}.
+     - Wrong punctuation, e.g. \cd{1. 2.0} instead of \cd{1, 2.0}.
+     - Mismatched brackets: \cd{( )}, \cd{[ ]} and @@latex:\cd{\{\}}@@ must be balanced.
+**** The error listing shows the problem text and what it expected.
+#+BEGIN_EXAMPLE
+ERROR: syntax error, unexpected BADTOKEN, expecting ')'
+  in file 'selected text'
+  line 1 char 13:
+
+  rrand(1, 2.0} 
+              ^
+#+END_EXAMPLE
+**** Often, the real mistake comes before the error is actually detected. :noexport:
+
+*** Runtime errors
+**** Most errors occur at runtime.
+     That is, the code is syntactically correct, but it does something
+     other than what you expected.
+**** Most important for now: DoesNotUnderstand error.
+     - It means: the \gls{object} "does not understand" what you asked it to do.
+     - Most common cause: Misspelled \gls{method} name.
+#+BEGIN_EXAMPLE
+"abc".find("b");  // OK
+
+"abc".findIt("b");
+--> ERROR: Message 'findIt' not understood.
+#+END_EXAMPLE
+
+*** SC runtime error output
+**** SC dumps a lot of information for runtime errors.
+     - The error message.
+     - The object(s) involved.
+     - A \emph{stack trace}, showing what the interpreter was doing
+       when the error happened, and how it got there.
+**** For now, just look at the error message.
+     As you get more experience, you can look at the stack trace and
+     get more information.
+
+** Preparing the environment
+   :PROPERTIES:
+   :EXPORT_OPTIONS: H:1
+   :EXPORT_AUTHOR: H. James Harkins
+   :END:
+*** Initial installation
+**** Before beginning, you should install:
+     - SuperCollider 3.7 beta or later.\\
+       http://supercollider.github.io/download
+     - *Optional:* The /sc3-plugins/ pack (additional synthesis units).
+       - Precompiled for OSX and Windows:\\
+	 http://sourceforge.net/projects/sc3-plugins/files
+       - Linux: Look for packages for your distribution.\\<all>
+	 Ubuntu: https://launchpad.net/~supercollider/+archive/ppa.\\
+	 Install the /supercollider/ and /supercollider-plugins/ packages.
+
+*** Installing workshop extensions
+**** Extensions are for extra features.
+     Not part of the base installation.
+     - *Note:* This assumes you're starting with no extensions except sc3-plugins.
+**** To install:
+     1. In SC, run \cd{Platform.userExtensionDir;}.\\
+	This tells you where to put the files.
+     2. Extract the =extensions.zip= file.
+     3. Copy or move the extracted files into the extension directory.
+
+*** For SuperCollider 3.6					   :noexport:
+**** Most of you are running SuperCollider 3.6.
+     - The workshop depends on some new features.
+     - Most of these are included in the extensions.
+     - For one, you have to replace a file in the class library.
+     - Don't do this if you're using the development version (3.7 alpha)!
+**** *SC 3.6:* Copy =ProxyInterfaces.sc.copyToClassLib= into the main class library.
+      1. Run this line in SC (except in Windows XP):
+	 #+name: ProxyInterfaceCopy
+	 #+caption: Run this to find the location of ProxyInterfaces.sc.
+	 #+begin_src {SuperCollider}
+         AbstractPlayControl.filenameSymbol.asString.dirname.openOS;
+	 #+end_src
+      2. Copy the file into this location.
+      3. Rename it so that its extension is only =sc=.
+
+*** *Yes? No?* Startup file					   :noexport:
+**** SC needs to run an extra code file during startup.
+     1. In the IDE, /File/ menu $\to$ /Open startup file/.
+     2. Copy and paste the line below:
+	#+name: startup
+	#+caption: Add this line to the startup file.
+	#+begin_src {SuperCollider}
+	(Platform.userExtensionDir +/+ "psSet-event-type.scd").load;
+	#+end_src
+     3. Save. Make sure the filename is =startup.scd=.
+**** Now, recompile the class library.
+     - "Recompiling" resets everything in the language.
+     - \ks{Ctrl-Shift-L}
+
+*** Audio setup
+**** OSX
+     - Can choose the device within SC. See below.
+     - Or, choose the device in OSX's audio control panel.
+**** Windows
+     - You /must/ choose the device within SC.
+     - Boot the server, then quit, to get the list of devices.
+**** Linux
+     - \egls{scsynth} goes through the JACK audio server.
+     - All audio configuration, including device, is done in JACK. /qjackctl/ can help.
+     - *Start JACK before booting the server!*
+
+*** Setting devices within SC
+**** First, get a list of devices.
+     - *OSX:* \cd{ServerOptions.devices}
+     - *Windows:* Boot the server. Then look for the device list.
+**** Set the device in \clss{ServerOptions}.
+     - You must quote the device name exactly.
+#+begin_src {SuperCollider} -i
+s.options.device = "Device Name";
+#+end_src
+**** Reboot the server.
+     - Quit first, if needed.
+     - It should use the chosen device now.
+
+*** Windows: ASIO						   :noexport:
+**** Strongly recommended to use an ASIO sound driver.
+     - The default Microsoft MME driver will work, but its \egls{latency} is very high.
+       - Latency: the delay between calculating the audio and hearing it.
+       - For live use, 30 ms is too much.
+       - MME can go as high as 230 ms!
+     - If your soundcard installed an ASIO driver, use it.
+     - For the built-in soundcard, use ASIO4ALL.
+
 * Footnotes
 
 [fn:ecfb5ae3] Heard in a lecture by Jeffrey Stolet (U of Oregon).
