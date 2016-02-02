@@ -2,6 +2,7 @@
 #+name: gloss
 | Term               | Plural    | Description                                                                                                                                                |
 |--------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| argument           |           | An input to a function or method, provided at the time of calling it                                                                                       |
 | callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code |
 | class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                 |
 | curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                    |
@@ -20,6 +21,9 @@
 | smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are \emph{moving average} and \emph{moving median}                                            |
 | UGen               |           | A Unit Generator, defining a signal-processing operation that runs in the audio server                                                                     |
 | control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}  |
+| variable           |           | A placeholder for an object, necessary to recall an object later and address method calls to it                                                            |
+| default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                       |
+| rate               |           | Of a UGen, its calculation rate: audio rate, control rate or initial rate                                                                                  |
 
 
 * Classes 							   :noexport:
@@ -52,8 +56,9 @@
 
 * UGens								   :noexport:
 #+name: ugens
-| Type | Term | Description | Arguments |
-|------+------+-------------+-----------|
+| Type | Term   | Description         | Arguments   |
+|------+--------+---------------------+-------------|
+| Osc  | SinOsc | Sinewave oscillator | freq, phase |
 
 
 * src blocks 							   :noexport:

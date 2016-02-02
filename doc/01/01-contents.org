@@ -439,6 +439,84 @@ s.options.device = "Device Name";
      - If your soundcard installed an ASIO driver, use it.
      - For the built-in soundcard, use ASIO4ALL.
 
+* Beginning (granular) synthesis
+** Audio in SuperCollider: Survival guide
+*** Overview of SuperCollider audio
+**** Audio synthesis could be a full-year course...
+     We will hit the basics:
+     - Audio \clsspl{Function}.
+       - \eglspl{UGen} (Unit Generators) for audio processing.
+       - \eGlspl{control input} to change the synth's behavior.
+     - \clss{NodeProxy} and \clss{Ndef}: Easy modification of signals.
+**** Focusing on \egls{granular synthesis}.
+     Relatively easy to get complex results.
+
+*** A simple synthesizer
+**** First, a simple example.
+     To show the parts of SC synthesis.
+#+name: ndef1
+#+caption: A sinewave synthesizer.
+#+BEGIN_SRC {SuperCollider} -i :extract=t
+s.boot;
+
+Ndef(\sine, { |freq = 440, amp = 0.1|
+   SinOsc.ar(freq, 0, amp).dup
+});
+
+Ndef(\sine).play;
+Ndef(\sine).stop;
+#+END_SRC
+
+*** Functions
+**** \Glspl{Function} appear in curly braces.
+     @@latex:\cd{\{ \ldots{} \}}@@. \\
+     Parts of a function:
+     1. \eGlspl{argument}: Data coming in from outside. (Optional.)
+     2. \eGlspl{variable}: Places to remember information locally. (Optional.)
+     3. /Expressions/: Do the work.
+     The last expression is the function's /return value/.
+
+*** Audio functions
+**** Audio functions are different only in what they do.
+     - Functions do anything.
+     - Audio functions /build networks of \glspl{UGen}/.
+**** Parts of an audio function:
+     1. \eGlspl{argument} become \eglspl{control input}. \\
+	External controls feed into control inputs.
+     2. \eGlspl{variable} are assigned \glspl{UGen}.
+     3. The return value is the final signal.
+
+*** Control inputs
+**** Two forms for control inputs:
+     - \cd{\textbar name = default, name = default\textbar}
+     - \cd{arg name = default, name = default;}
+     Both behave the same.
+**** What's a \egls{default}?
+     - The input has to start with some number.
+     - If you leave out the default, it will assume 0.
+     - 0 is meaningless for some parameters: \\
+       Frequency = 0 is silent.
+     *Get in the habit of writing defaults.*
+
+*** Unit generators
+**** \glspl{UGen} represent signal processing operations.
+     - E.g., \ugen{SinOsc} to produce a sinewave.
+     - Many types of UGens: Oscillators, filters, envelopes, etc.
+**** UGens are written like this:
+#+BEGIN_CENTER
+\cd{UGen.rate(inputs)}
+#+END_CENTER
+     - UGen :: Its name, starting with a Capital.
+     - rate :: \ci{ar} = audio \gls{rate}, \ci{kr} = control rate.
+     - inputs :: A list, separated by commas.
+
+*** UGen rates
+**** Signals calculate /n/ numbers per second.
+     The \egls{rate} controls how many.
+     - Audio rate :: A separate calculation for every audio output sample.
+     - Control rate :: Fewer calculations (saves CPU for slower-moving signals).
+     - Initial rate :: Calculates once, and holds forever.
+
 * Footnotes
 
 [fn:ecfb5ae3] Heard in a lecture by Jeffrey Stolet (U of Oregon).
