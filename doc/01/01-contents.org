@@ -115,8 +115,8 @@
      - Note number identifies /which/ trigger.
      - Velocity is extra detail, but /doesn't change/ after note-on.
 
-*** Normalized range *(IMPORTANT)*
-**** *Solution:* \eGls{normalized} vs. actual data /ranges/.
+*** Normalized range (IMPORTANT)
+**** *Solution:* Normalized vs. actual data /ranges/.
      *Range:* The lowest and highest meaningful numbers for a control.
      - Frequency: 20--20,000 Hz
      - Volume: 0--1 (same as $-\infty$--0 dB).
