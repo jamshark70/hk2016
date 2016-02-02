@@ -1,33 +1,53 @@
 * Glossary							   :noexport:
 #+name: gloss
-| Term               | Plural    | Description                                                                                                                      |
-|--------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------|
-| class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                       |
-| curve factor       |           | A number that "bends" a linear mapping into a curve. The larger the number, the more extreme the curve                           |
-| exponential        |           | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level                     |
-| granular synthesis |           | A technique for generating complex sounds from short, overlapping segments of recorded audio                                     |
-| latency            | latencies | It takes time for mic input to reach SC, and also for SC's calculations to reach the speakers. This time is \emph{latency}       |
-| linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                 |
-| method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                      |
-| normalized         |           | Describes a standard range associated with a physical control or on-screen display. Typically 0--1                               |
-| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} ("methods") into single entities. |
-| OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                              |
-| scide              |           | SuperCollider Integrated Development Environment. The main code-interaction interface                                            |
-| sclang             |           | SuperCollider language. Evaluates code and displays results                                                                      |
-| scsynth            |           | SuperCollider synthesis server. Receives OSC messages and produces audio                                                         |
-| smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are /moving average/ and /moving median/                            |
+| Term               | Plural    | Description                                                                                                                                                |
+|--------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code |
+| class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                 |
+| curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                    |
+| exponential        |           | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level                                               |
+| granular synthesis |           | A technique for generating complex sounds from short, overlapping segments of recorded audio                                                               |
+| latency            | latencies | It takes time for mic input to reach SC, and also for SC's calculations to reach the speakers. This time is \emph{latency}                                 |
+| linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                                           |
+| method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                                                |
+| normalized         |           | Describes a standard range associated with a physical control or on-screen display. Typically 0--1                                                         |
+| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities.                          |
+| OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                                                        |
+| path               |           | A /-separated string, giving a location in a tree structure. File paths go through directories. OSC command paths use slashes the same way                 |
+| scide              |           | SuperCollider Integrated Development Environment. The main code-interaction interface                                                                      |
+| sclang             |           | SuperCollider language. Evaluates code and displays results                                                                                                |
+| scsynth            |           | SuperCollider synthesis server. Receives OSC messages and produces audio                                                                                   |
+| smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are \emph{moving average} and \emph{moving median}                                            |
+| UGen               |           | A Unit Generator, defining a signal-processing operation that runs in the audio server                                                                     |
+| control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}  |
 
 
 * Classes 							   :noexport:
 #+name: class
-| Term | Plural | Description |
-|------+--------+-------------|
+| Term          | Plural      | Description                                                                                                                                                        |
+|---------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Array         |             | An ordered list of items with a fixed maximum number of items. When adding, be sure to reassign: \cd{array = array.add(item)}                                      |
+| ControlSpec   |             | Defines a numeric range, with low and high values, a curve, step size (for quantization) and a default value                                                       |
+| MIDIdef       |             | MIDIdef is global, named storage for MIDIFuncs, just like OSCdef is global storage for OSCFuncs                                                                    |
+| MIDIFunc      |             | Receives incoming MIDI messages. Its design is very much like OSCFunc; only the specific parameters differ                                                         |
+| NetAddr       |             | Represents a port for network communication: an IP address (e.g. \cd{"127.0.0.1"}) and a port number                                                               |
+| OSCdef        |             | Like Pdef and Tdef, OSCdef is global storage for OSCFunc responders                                                                                                |
+| OSCFunc       |             | Receives Open Sound Control messages. The ``Func'' is a callback function, whose arguments are \cd{msg, time, addr, recvPort}                                      |
+| Pdef          |             | Global storage for pattern proxies, where the patterns produce sequencing events                                                                                   |
+| ProxySpace    |             | An Environment that automatically makes a NodeProxy from any item in it                                                                                            |
+| ServerOptions |             | Configuration options for scsynth, including soundcard, are variables in this class. \cd{s.options} controls the bootup options for \ci{s}                         |
+| Tdef          |             | Global storage for Tasks. Give the task function a name, and Tdef will treat the function as a Task                                                                |
+| Function      |             | A code block, with local variables and arguments, that can be executed at any time by calling ``value'' on it. A function always returns exactly one result object |
+| NodeProxy     | NodeProxies | A hot-swappable placeholder for a Synth on the server                                                                                                              |
+| Ndef          |             | ``NodeProxy definition'': Convenient, global storage for NodeProxies                                                                                               |
 
 
 * Methods							   :noexport:
 #+name: mth
-| Term | Plural | Description |
-|------+--------+-------------|
+| Term     | Plural | Description                                                                                                                          |
+|----------+--------+--------------------------------------------------------------------------------------------------------------------------------------|
+| free     |        | Removes a resource that was previously allocated, including Buffers and MIDI or OSC responders                                       |
+| langPort |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
 
 
 * UGens								   :noexport:
