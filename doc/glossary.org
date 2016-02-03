@@ -5,9 +5,12 @@
 | argument           |           | An input to a function or method, provided at the time of calling it                                                                                       |
 | callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code |
 | class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                 |
+| control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}  |
 | curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                    |
+| default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                       |
 | exponential        |           | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level                                               |
 | granular synthesis |           | A technique for generating complex sounds from short, overlapping segments of recorded audio                                                               |
+| JITLib             |           | The ``Just-In-Time'' Library. A system of ``proxies'' that allow you to define a synthesis structure and fill in the details a piece at a time             |
 | latency            | latencies | It takes time for mic input to reach SC, and also for SC's calculations to reach the speakers. This time is \emph{latency}                                 |
 | linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                                           |
 | method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                                                |
@@ -15,15 +18,14 @@
 | object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities.                          |
 | OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                                                        |
 | path               |           | A /-separated string, giving a location in a tree structure. File paths go through directories. OSC command paths use slashes the same way                 |
+| proxy              | proxies   | A placeholder that allows you to define connections between modules independent of each module's content                                                   |
+| rate               |           | Of a UGen, its calculation rate: audio rate, control rate or initial rate                                                                                  |
 | scide              |           | SuperCollider Integrated Development Environment. The main code-interaction interface                                                                      |
 | sclang             |           | SuperCollider language. Evaluates code and displays results                                                                                                |
 | scsynth            |           | SuperCollider synthesis server. Receives OSC messages and produces audio                                                                                   |
 | smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are \emph{moving average} and \emph{moving median}                                            |
 | UGen               |           | A Unit Generator, defining a signal-processing operation that runs in the audio server                                                                     |
-| control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}  |
 | variable           |           | A placeholder for an object, necessary to recall an object later and address method calls to it                                                            |
-| default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                       |
-| rate               |           | Of a UGen, its calculation rate: audio rate, control rate or initial rate                                                                                  |
 
 
 * Classes 							   :noexport:
@@ -52,13 +54,22 @@
 |----------+--------+--------------------------------------------------------------------------------------------------------------------------------------|
 | free     |        | Removes a resource that was previously allocated, including Buffers and MIDI or OSC responders                                       |
 | langPort |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
+| ar       |        | Create an audio-rate instance of a UGen. The arguments to ``ar'' establish connections to other UGens                                |
+| kr       |        | Create a control-rate instance of a UGen. The arguments to ``kr'' establish connections to other UGens                               |
+| ir       |        | Create a initial-rate (one-shot) instance of a UGen. The arguments to ``ir'' establish connections to other UGens                    |
+| dup      |        | ``Duplicate.'' Often used to copy a mono signal into left and right channels                                                         |
+| boot     |        | The method to start a server in code (rather than through the editor interface)                                                      |
+| set      |        | On a synth node or NodeProxy, set a new value for a control input: \cd{n.set(\textbackslash name, value...)}                         |
 
 
 * UGens								   :noexport:
 #+name: ugens
-| Type | Term   | Description         | Arguments   |
-|------+--------+---------------------+-------------|
-| Osc  | SinOsc | Sinewave oscillator | freq, phase |
+| Type | Term     | Description                                                                                                                        | Arguments               |
+|------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------|
+| Osc  | SinOsc   | Sinewave oscillator                                                                                                                | freq, phase             |
+| IO   | Out      | Writes one or more channels to an audio or control bus. Many \ci{Out} units can write to the same bus; their signals will be mixed | bus, channelsArray      |
+| Pan  | Balance2 | Stereo-to-stereo balancer. When \ci{pos} is --1, you hear only the left channel; when +1, only the right channel                   | left, right, pos, level |
+| Pan  | Pan2     | Mono-to-stereo panner. \ci{in} must be a mono signal. \ci{pos}: Full left is --1, right is +1                                      | in, pos, level          |
 
 
 * src blocks 							   :noexport:

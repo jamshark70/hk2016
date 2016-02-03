@@ -460,12 +460,24 @@ s.options.device = "Device Name";
 s.boot;
 
 Ndef(\sine, { |freq = 440, amp = 0.1|
-   SinOsc.ar(freq, 0, amp).dup
+   (SinOsc.ar(freq) * amp).dup
 });
 
 Ndef(\sine).play;
 Ndef(\sine).stop;
 #+END_SRC
+
+*** Booting the server
+**** Audio synthesis happens in the /server/.
+     If the server is not running, you get no sound.
+**** Ways to boot the server:
+     - In code: \cd{s.boot}. \\
+       - \ci{s} is usually the /default server/.
+       - \mth{boot} is the instruction to that server.
+       \cd{object.command} is a normal pattern in SC.
+     - In the IDE:
+       - /Language/ menu $\to$ /Boot Server/.
+       - Click on server status bar $\to$ /Boot Server/.
 
 *** Functions
 **** \Glspl{Function} appear in curly braces.
@@ -478,25 +490,13 @@ Ndef(\sine).stop;
 
 *** Audio functions
 **** Audio functions are different only in what they do.
-     - Functions do anything.
+     - Functions, in general, can do anything.
      - Audio functions /build networks of \glspl{UGen}/.
 **** Parts of an audio function:
      1. \eGlspl{argument} become \eglspl{control input}. \\
 	External controls feed into control inputs.
      2. \eGlspl{variable} are assigned \glspl{UGen}.
      3. The return value is the final signal.
-
-*** Control inputs
-**** Two forms for control inputs:
-     - \cd{\textbar name = default, name = default\textbar}
-     - \cd{arg name = default, name = default;}
-     Both behave the same.
-**** What's a \egls{default}?
-     - The input has to start with some number.
-     - If you leave out the default, it will assume 0.
-     - 0 is meaningless for some parameters: \\
-       Frequency = 0 is silent.
-     *Get in the habit of writing defaults.*
 
 *** Unit generators
 **** \glspl{UGen} represent signal processing operations.
@@ -513,9 +513,144 @@ Ndef(\sine).stop;
 *** UGen rates
 **** Signals calculate /n/ numbers per second.
      The \egls{rate} controls how many.
-     - Audio rate :: A separate calculation for every audio output sample.
-     - Control rate :: Fewer calculations (saves CPU for slower-moving signals).
-     - Initial rate :: Calculates once, and holds forever.
+     - \mth{ar} :: Audio rate: A separate calculation for every audio output sample.
+     - \mth{kr} :: Control rate: Fewer calculations (saves CPU for slower-moving signals, e.g. LFOs).
+     - \mth{ir} :: Initial rate: Calculates once, and holds forever.
+
+*** Control inputs
+**** Two forms for \glspl{control input}:
+     - \cd{\textbar name = default, name = default\textbar}
+     - \cd{arg name = default, name = default;}
+     Both behave the same.
+**** What's a \egls{default}?
+     - The input has to start with some number.
+     - If you leave out the default, it will assume 0.
+     - 0 is meaningless for some parameters: \\
+       Frequency = 0 is silent.
+     *Get in the habit of writing defaults.*
+
+*** Control inputs are UGens
+**** Important rule in SC audio processing:
+     *If it changes, it must be a \gls{UGen}*.
+**** \Glspl{control input}' values change from outside.
+     So, they must be UGens!
+     - SC scans the argument list and builds \ci{Control} units automatically.
+     - Passing controls into other UGens is the same as passing UGens into other UGens.
+
+*** Connections: UGen $\to$ input
+**** {1.0\textwidth}{2.5in}				      :B_overlayarea:
+     :PROPERTIES:
+     :BEAMER_env: overlayarea
+     :END:
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\sine, { |freq = 440, amp = 0.1|
+   (SinOsc.ar(freq) * amp).dup
+});
+#+END_SRC
+***** O1							  :B_onlyenv:
+      :PROPERTIES:
+      :BEAMER_env: onlyenv
+      :BEAMER_act: 1
+      :END:
+****** \ci{freq} and \ci{amp} are control inputs.
+       - \ci{freq} appears in parentheses for \ugen{SinOsc}.
+       - This creates a connection:
+#+BEGIN_CENTER
+\ci{freq} $\to$ frequency of \ugen{SinOsc}
+#+END_CENTER
+***** O2							  :B_onlyenv:
+      :PROPERTIES:
+      :BEAMER_env: onlyenv
+      :BEAMER_act: 2
+      :END:
+****** \cd{* amp}... that looks like math.
+       Math on \glspl{UGen} produces a /math UGen/!
+       - Operator: Multiplication (*).
+       - Left side: \ci{SinOsc} (audio rate UGen).
+       - Right side: \ci{amp} (control rate UGen).
+       Signal = Multiplication result (audio rate). \\
+       In audio, multiplication is an amplifier.
+***** O3							  :B_onlyenv:
+      :PROPERTIES:
+      :BEAMER_env: onlyenv
+      :BEAMER_act: 3
+      :END:
+****** \mth{dup} is not a UGen.
+       - The \ugen{SinOsc} is mono (one channel).
+       - Multiplying it by the amplifier is also mono.
+       - For stereo, we need two copies: @@latex:\emph{dup}licate@@. \\
+	 See also panning UGens: \ugen{Pan2}, \ugen{Balance2}.
+       Duplication just sends one result to two places. It doesn't calculate anything new.
+***** O4							  :B_onlyenv:
+      :PROPERTIES:
+      :BEAMER_env: onlyenv
+      :BEAMER_act: 4
+      :END:
+****** Left							      :BMCOL:
+       :PROPERTIES:
+       :BEAMER_col: 0.6
+       :END:
+******* The code produces a signal chain like this.
+	- We don't know the actual numbers yet.
+	- But we can see /how/ they will calculate.
+	(\ugen{Out} is implied with \clss{Ndef}.)
+****** Right							      :BMCOL:
+       :PROPERTIES:
+       :BEAMER_col: 0.25
+       :END:
+       [[../01/img/synth-graph.pdf]]
+
+*** Synthesis functions: Summary
+**** In a synthesis function:
+     1. Declare your \eglspl{control input} and \eglspl{default}.
+     2. Create signal processing \eglspl{UGen}. \\
+	Connect them by supplying other UGens as inputs.
+     3. The last expression is the result signal.
+
+*** Using control inputs
+**** To change control inputs from outside, \mth{set} them.
+     \cd{theSynth.set(\textbackslash name, value, \textbackslash name, value...)}.
+     - External control: Controller $\to$ range mapping $\to$ \mth{set} statement.
+#+name: ndset1
+#+caption: Setting control inputs to new values.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\sine).set(\freq, 220);
+Ndef(\sine).set(\freq, 9000);
+Ndef(\sine).set(\freq, 300);
+
+Ndef(\sine).set(\amp, 0.5);
+Ndef(\sine).set(\amp, 0);
+Ndef(\sine).set(\amp, 0.1);
+#+END_SRC
+
+*** What is Ndef?
+**** \clss{Ndef} represents a signal on the server.
+     - Refer to the signal by name, in lots of contexts.
+     - You can /change/ the signal's source at any time.
+**** Part of the /Just-In-Time' Library/ (\gls{JITLib}).
+     Basic idea: Relationships are independent of content.
+     - Signals are \eglspl{proxy}: Placeholders for something else.
+     - Put any signal into any placeholder, at any time.
+     - Set up relationships between proxies, at any time.
+     Great for experimenting!
+
+*** Proxies and "set"
+**** What if you want a signal to control frequency?
+     1. Make another \clss{Ndef}.
+	- Output should be in the frequency range.
+	- /Control rate/, matching the control input's rate.
+     2. Set the control input to the \clss{Ndef}.
+#+name: ndset2
+#+caption: Set the control input to another proxy: Modulation.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\randF, {
+   LFDNoise1.kr(10).exprange(200, 800)
+});
+
+Ndef(\sine).set(\freq, Ndef(\randF));
+#+END_SRC
+
+** Granular synthesis
 
 * Footnotes
 
