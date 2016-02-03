@@ -1,4 +1,4 @@
-#+BIND: org-latex-listings-options (("style" "SuperCollider-IDE") ("basicstyle" "\\ttfamily\\scriptsize") ("captionpos" "b") ("tabsize" "3"))
+#+BIND: org-latex-listings-options (("style" "SuperCollider-IDE") ("basicstyle" "\\ttfamily\\scriptsize") ("captionpos" "b") ("tabsize" "3") ("scclassstyle" "\\color[RGB]{122,147,255}") ("keywordstyle" "\\color[RGB]{122,147,255}\\bfseries") ("scenvvarstyle" "\\color[RGB]{187,132,92}") ("scsymbolstyle" "\\color[RGB]{100,170,100}") ("commentstyle" "\\color[RGB]{220,64,49}") ("stringstyle" "\\color[RGB]{160,160,160}"))
 # #+BIND: org-latex-listings-options (("language" "[LaTeX]Tex") ("keywordstyle" "\color{myblue}") ("basicstyle" "\ttfamily") ("commentstyle" "\color{commentred}") ("stringstyle" "\color{symbolgreen}"))
 #+bind: org-beamer-outline-frame-title "Outline"
 
@@ -34,8 +34,8 @@
 #+LATEX_HEADER: \captionsetup{font={it,scriptsize},labelfont={it,scriptsize},singlelinecheck=false}
 
 #+LATEX_HEADER: \usepackage{color}
-#+LATEX_HEADER: \definecolor{codecolor}{RGB}{0,125,25}
-#+LATEX_HEADER: \definecolor{keycolor}{RGB}{25,94,0}
+#+LATEX_HEADER: \definecolor{codecolor}{RGB}{250,250,125}
+#+LATEX_HEADER: \definecolor{keycolor}{RGB}{155,200,255}
 #+LATEX_HEADER: \newcommand{\cd}[1]{\textcolor{codecolor}{\texttt{#1}}}
 #+LATEX_HEADER: \newcommand{\ci}[1]{\mbox{\textcolor{codecolor}{\texttt{#1}}}}
 #+LATEX_HEADER: \newcommand{\ks}[1]{\textcolor{keycolor}{\framebox[1.05\width]{\texttt{#1}}}}
