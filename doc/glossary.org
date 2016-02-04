@@ -21,7 +21,7 @@
 | linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                                                 |
 | method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                                                      |
 | normalized         |           | Describes a standard range associated with a physical control or on-screen display. Typically 0--1                                                               |
-| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities.                                |
+| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities                                 |
 | OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                                                              |
 | path               |           | A /-separated string, giving a location in a tree structure. File paths go through directories. OSC command paths use slashes the same way                       |
 | proxy              | proxies   | A placeholder that allows you to define connections between modules independent of each module's content                                                         |

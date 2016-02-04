@@ -601,6 +601,7 @@ Ndef.clear;  // when done
      - *Where* to find the grain's audio: \clsspl{Buffer} and \eglspl{frame}. \pause
      - *When* to make the grain: \eGlspl{trigger}. \pause
      - *How long* the grain should last.
+     - *How fast* to play the audio (\ci{rate}).
 
 *** Buffers
 **** \clsspl{Buffer} store audio in memory.
@@ -730,8 +731,17 @@ Buffer(0, 188893, 1, 44100,
      - \ugen{Dust} :: Random. Can't predict.
      - \ugen{Impulse} :: Time = 1 $\div$ frequency.
 #+BEGIN_CENTER
-$dur = 1 \div frequency$
+$dur = \frac{overlap}{frequency}$
 #+END_CENTER
+
+*** Grain rate
+**** The \ci{rate} parameter controls the playback speed.
+     - Rate = 1: Same speed as the original file.
+     - Rate = 0.5: Half speed; one octave lower.
+     - Rate = 2: Double speed; one octave higher.
+**** \mth{midiratio} for exact control over pitch.
+     - \cd{semitones.midiratio} $\to$ rate multiplier.
+     - Works for any number of half steps, including fractions.
 
 *** Caution: Comb-filtering effects
 **** High overlap: Maybe weird tone color effects.
