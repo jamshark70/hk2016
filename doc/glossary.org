@@ -5,6 +5,7 @@
 | argument           |           | An input to a function or method, provided at the time of calling it                                                                                             |
 | callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code       |
 | class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                       |
+| comb filter        |           | A feedback-delay filter using a simple delay. Its spectrum resembles the teeth of a comb. Similar effects occur in granular synthesis, without randomizing       |
 | control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}        |
 | curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                          |
 | default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                             |
@@ -65,12 +66,15 @@
 | addSpec     |        | Associates control inputs in a proxy (e.g., Ndef) with ControlSpecs, defining the inputs' useful ranges in GUIs                      |
 | ar          |        | Create an audio-rate instance of a UGen. The arguments to ``ar'' establish connections to other UGens                                |
 | boot        |        | The method to start a server in code (rather than through the editor interface)                                                      |
+| clear       |        | Empty out a NodeProxy (Ndef). Call on a single Ndef to remove just one, or on Ndef itself to erase all of them                       |
 | dup         |        | ``Duplicate.'' Often used to copy a mono signal into left and right channels                                                         |
 | exprange    |        | Converts a UGen's range into a different exponential range                                                                           |
 | free        |        | Removes a resource that was previously allocated, including Buffers and MIDI or OSC responders                                       |
 | ir          |        | Create a initial-rate (one-shot) instance of a UGen. The arguments to ``ir'' establish connections to other UGens                    |
 | kr          |        | Create a control-rate instance of a UGen. The arguments to ``kr'' establish connections to other UGens                               |
 | langPort    |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
+| midicps     |        | Convert a MIDI note number to a frequency in Hz                                                                                      |
+| midiratio   |        | Convert a number of semitones into a frequency factor                                                                                |
 | range       |        | Converts a UGen's range into a different linear range                                                                                |
 | read        |        | \cd{Buffer.read()} creates a new buffer in the server and fills it with audio from a sound file                                      |
 | readChannel |        | Like \cd{Buffer.read}, but reads one or more channels in an order you choose                                                         |
@@ -100,11 +104,19 @@
 | Osc   | LFDNoise0     | Generates \ci{freq} random numbers per second, holding the value between each one                                                                          | freq                                                                            |
 | Osc   | LFDNoise1     | Generates \ci{freq} random numbers per second and makes a linear ramp between each one                                                                     | freq                                                                            |
 | Osc   | LFDNoise2     | Generates \ci{freq} random numbers per second and makes a quadratic-interpolation curve between each one                                                   | freq                                                                            |
+| Osc   | LFPulse       | Non-band-limited pulse wave, intended as an LFO for modulation. Unlike most other oscillators, its output range is unipolar (0--1)                         | freq, iphase, width                                                             |
+| Osc   | LFSaw         | Non-band-limited sawtooth oscillator                                                                                                                       | freq, iphase                                                                    |
+| Osc   | LFTri         | Non-band-limited triangle wave. It may be used as an audio oscillator because of limited aliasing                                                          | freq, iphase                                                                    |
 | Osc   | PinkNoise     | A noise generator with ``equal power'' across all frequencies, by dropping 3 dB every octave. Also known as $\frac{1}{f}$ noise                            | mul, add                                                                        |
 | Osc   | SinOsc        | Sinewave oscillator                                                                                                                                        | freq, phase                                                                     |
+| Osc   | VarSaw        | Sawtooth oscillator with variable duty cycle. Not band-limited                                                                                             | freq, iphase, width                                                             |
 | Osc   | WhiteNoise    | A noise generator containing all frequencies equally loudly. The sound is extremely bright                                                                 | mul, add                                                                        |
 | Pan   | Balance2      | Stereo-to-stereo balancer. When \ci{pos} is --1, you hear only the left channel; when +1, only the right channel                                           | left, right, pos, level                                                         |
 | Pan   | Pan2          | Mono-to-stereo panner. \ci{in} must be a mono signal. \ci{pos}: Full left is --1, right is +1                                                              | in, pos, level                                                                  |
+| Rand  | ExpRand       | Generates a single random number with an exponential distribution at the beginning of a synth, and holds that value                                        | lo, hi                                                                          |
+| Rand  | Rand          | Generates a single random number at the beginning of a synth, and holds that value                                                                         | lo, hi                                                                          |
+| Rand  | TExpRand      | Generates an exponentially-distributed random number in response to a trigger signal, holding each number until the next trigger                           | lo, hi, trig                                                                    |
+| Rand  | TRand         | Generates a random number in response to a trigger signal, holding each number until the next trigger                                                      | lo, hi, trig                                                                    |
 | Trig  | Dust          | Produces randomly timed triggers, averaging \emph{density} triggers per second                                                                             | density                                                                         |
 | Trig  | Impulse       | Produces triggers at equal time intervals---single sample impulses, \emph{freq} times per second                                                           | freq, phase                                                                     |
 

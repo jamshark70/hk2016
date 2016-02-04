@@ -198,3 +198,14 @@ Ndef.clear;
 
 // impulses
 { [Impulse.ar(400), Dust.ar(1100)] }.plot;
+
+
+// randomize
+Ndef(\g, { |tfreq = 15, overlap = 4, rate = 1, pos = 0.5, rpos = 0, rrate = 1|
+	var trig = Impulse.ar(tfreq),
+	dur = overlap / tfreq,
+	rateRand = TExpRand.ar(rrate.reciprocal, rrate, trig),
+	posRand = TRand.ar(rpos.neg, rpos, trig);
+	GrainBuf.ar(2, trig, dur, b, rate * rateRand, pos + posRand);
+});
+Ndef(\g).addSpec(\rpos, [0, 0.1], \rrate, [1, 2.midiratio, \exp]);

@@ -761,6 +761,8 @@ Ndef.clear;  // when done
      (Actually, any information---but usually audio.)
      - \cd{Buffer.read} to load sound files from disk.\glsadd{read} \\
        Also \cd{Buffer.readChannel} to extract channels.\glsadd{readChannel}
+     - Make sure you \mth{free} a buffer when you're finished: \\
+       \cd{b.free}.
 #+name: buf1
 #+caption: Read a buffer from disk, and see its properties.
 #+BEGIN_SRC {SuperCollider} -i
@@ -834,6 +836,7 @@ Buffer(0, 188893, 1, 44100,
      To read 0.5 seconds starting at 1 second:
      - \ci{startFrame} = 1 sec * 44100 frames/sec = 44100 frames
      - \ci{numFrames} = 0.5 sec * 44100 frames/sec = 22050 frames
+     \ci{startFrame} and \ci{numFrames} are parameters of \clss{Buffer}\ci{.}\mth{read} and \mth{readChannel}.
 
 *** GrainBuf: Normalized ``pos''
 **** \ugen{GrainBuf}'s \ci{pos} is 0--1.
@@ -872,6 +875,83 @@ Buffer(0, 188893, 1, 44100,
      - So you can predict the time between impulses.
 
 *** Grain durations
+**** Grain duration: Choppy or smooth sound.
+     Easiest way: \ci{overlap} parameter.
+     - Overlap = 1: Grain duration = time between triggers.
+     - = 2: Multiply by two; two grains at any time.
+     - = 0.5: Multiply by half; space between grains.
+     What is the time between triggers?
+     - \ugen{Dust} :: Random. Can't predict.
+     - \ugen{Impulse} :: Time = 1 $\div$ frequency.
+#+BEGIN_CENTER
+$dur = 1 \div frequency$
+#+END_CENTER
+
+*** Caution: Comb-filtering effects
+**** High overlap: Maybe weird tone color effects.
+     - Audio frequencies related to grain frequency get stronger.
+     - Halfway between those, frequencies get weaker.
+     - \eGlspl{comb filter} have a similar effect.
+**** To reduce the impact, randomize some parameters slightly.
+     Especially \ci{pos} and \ci{rate}.
+     - \ugen{TRand} :: When triggered, makes a random number.
+     - \ugen{TExpRand} :: Same, but exponential (instead of linear) range.
+
+*** Example: Randomizing
+#+name: rand1
+#+caption: Slight randomness on grain parameters, to control comb-filtering effects.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\g, { |tfreq = 15, overlap = 4, rate = 1, pos = 0.5, rpos = 0, rrate = 1|
+   var trig = Impulse.ar(tfreq),
+   dur = overlap / tfreq,
+   rateRand = TExpRand.ar(rrate.reciprocal, rrate, trig),
+   posRand = TRand.ar(rpos.neg, rpos, trig);
+   GrainBuf.ar(2, trig, dur, b, rate * rateRand, pos + posRand);
+});
+Ndef(\g).addSpec(\rpos, [0, 0.1], \rrate, [1, 2.midiratio, \exp]);
+#+END_SRC
+**** Questions for you:\glsadd{midiratio}
+     1. Why does \ci{pos} use \ugen{TRand} and \ci{+}?
+     2. Why does \ci{rate} use \ugen{TExpRand} and \ci{*}?
+
+*** Exercises
+**** Take some time to play with granular synthesis on your own.
+     1. \mth{clear} out the old Ndefs: \cd{Ndef.clear}.
+     2. \mth{free} the old buffer and \mth{read} your own.
+	- *Hint:* Drag the file into the editor window.
+	- If it's stereo, use \mth{readChannel}.
+     3. Replay the Ndefs. Discover interesting sounds using GUI sliders.
+     4. Try other \ci{pos} generators: \ugen{LFSaw}, \ugen{LFTri}, \ugen{LFPulse}, \ugen{VarSaw}.
+     5. Edit so that \cd{Ndef(\textbackslash g)} includes the \ci{pos}
+        generator within its own function. (I.e., remove the need for
+        \cd{Ndef(\textbackslash pos)}.)
+
+*** Exercise notes (article)				    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+**** Notes on the exercises
+1. Here, we want to wipe out everything. \clss{Ndef} is the storage
+   location for a set of proxies; clearing the storage location clears
+   everything in it. You can also clear individual proxies:
+   \cd{Ndef(\textbackslash name).clear}.
+2. Buffer loading.
+   - *Always* \mth{free} the buffer variable before loading something
+     else! Otherwise, you will keep using memory in the server.
+   - SC's grain UGens require a mono buffer. If you will load a stereo
+     buffer, the next steps won't work.
+   - \mth{readChannel} has one additional argument, \ci{channels}. Put
+     the list of channels you want to select within square brackets:
+     \cd{[channel, ...]}. Of course, this may be only one: \cd{[0]}
+     will load the left channel of a stereo file; \cd{[1]} will load
+     the right.
+3. Don't be afraid to try extreme values. Change the numbers in
+   \mth{addSpec} if you have to.
+4. This is a good chance to get familiar with the SC help system:
+   \ks{Ctrl-D}.
+5. It's a useful skill to be able to move signal processors around,
+   and reconfigure their connections. It takes a lot of time to
+   develop this skill---be patient!
 
 * Footnotes
 
