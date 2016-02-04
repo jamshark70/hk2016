@@ -1,31 +1,37 @@
 * Glossary							   :noexport:
 #+name: gloss
-| Term               | Plural    | Description                                                                                                                                                |
-|--------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| argument           |           | An input to a function or method, provided at the time of calling it                                                                                       |
-| callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code |
-| class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                 |
-| control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}  |
-| curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                    |
-| default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                       |
-| exponential        |           | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level                                               |
-| granular synthesis |           | A technique for generating complex sounds from short, overlapping segments of recorded audio                                                               |
-| JITLib             |           | The ``Just-In-Time'' Library. A system of ``proxies'' that allow you to define a synthesis structure and fill in the details a piece at a time             |
-| latency            | latencies | It takes time for mic input to reach SC, and also for SC's calculations to reach the speakers. This time is \emph{latency}                                 |
-| linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                                           |
-| method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                                                |
-| normalized         |           | Describes a standard range associated with a physical control or on-screen display. Typically 0--1                                                         |
-| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities.                          |
-| OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                                                        |
-| path               |           | A /-separated string, giving a location in a tree structure. File paths go through directories. OSC command paths use slashes the same way                 |
-| proxy              | proxies   | A placeholder that allows you to define connections between modules independent of each module's content                                                   |
-| rate               |           | Of a UGen, its calculation rate: audio rate, control rate or initial rate                                                                                  |
-| scide              |           | SuperCollider Integrated Development Environment. The main code-interaction interface                                                                      |
-| sclang             |           | SuperCollider language. Evaluates code and displays results                                                                                                |
-| scsynth            |           | SuperCollider synthesis server. Receives OSC messages and produces audio                                                                                   |
-| smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are \emph{moving average} and \emph{moving median}                                            |
-| UGen               |           | A Unit Generator, defining a signal-processing operation that runs in the audio server                                                                     |
-| variable           |           | A placeholder for an object, necessary to recall an object later and address method calls to it                                                            |
+| Term               | Plural    | Description                                                                                                                                                      |
+|--------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| argument           |           | An input to a function or method, provided at the time of calling it                                                                                             |
+| callback           |           | A function that executes in response to an event in some other part of the system. If you make a GUI button, a click needs to ``call back'' into your code       |
+| class              | classes   | An object definition, consisting of variables (for data storage) and methods (for the object's operations)                                                       |
+| control input      |           | An argument of a synthesis function. The server exposes control inputs to be set from the language client: \cd{synth.set(\textbackslash name, newValue);}        |
+| curve factor       |           | A number that ``bends" a linear mapping into a curve. The larger the number, the more extreme the curve                                                          |
+| default            |           | A value that will be used unless you specify another value. E.g., the default frequency for \cd{SinOsc.ar} is 440 Hz                                             |
+| envelope           |           | A control signal that shapes amplitude or another parameter. Important for note control. A standard shape is ADSR                                                |
+| envelope generator |           | The standard name for the unit in a synthesizer that produces an envelope signal from the envelope's parameters                                                  |
+| exponential        |           | A data range with steps defined by multiplication: an interval of $\times 1.5$ feels identical, at any level                                                     |
+| frame              |           | In a multichannel sound file or buffer, a frame is one sample for each channel, all at the same time index                                                       |
+| granular synthesis |           | A technique for generating complex sounds from short, overlapping segments of recorded audio                                                                     |
+| impulse            |           | In theory, an infinitely short burst of sound. In practice, a single non-zero sample (shortest possible digital sound) surrounded by silence                     |
+| interpolation      |           | When playing recorded audio faster or slower than normal, buffer UGens have to calculate sample values ``in between'' the given samples---i.e., interpolate them |
+| JITLib             |           | The ``Just-In-Time'' Library. A system of ``proxies'' that allow you to define a synthesis structure and fill in the details a piece at a time                   |
+| latency            | latencies | It takes time for mic input to reach SC, and also for SC's calculations to reach the speakers. This time is \emph{latency}                                       |
+| linear             |           | A data range with steps defined by addition: an interval of $+0.1$ feels identical, at any level                                                                 |
+| method             |           | An action which an object can perform. Very similar to a function, but it belongs to a class and has a name                                                      |
+| normalized         |           | Describes a standard range associated with a physical control or on-screen display. Typically 0--1                                                               |
+| object             |           | The focal point of object-oriented programming. Objects combine \emph{data} and \emph{actions} (``methods") into single entities.                                |
+| OSC                |           | Open Sound Control. A communication protocol to send light, but structured, messages over a network                                                              |
+| path               |           | A /-separated string, giving a location in a tree structure. File paths go through directories. OSC command paths use slashes the same way                       |
+| proxy              | proxies   | A placeholder that allows you to define connections between modules independent of each module's content                                                         |
+| rate               |           | Of a UGen, its calculation rate: audio rate, control rate or initial rate                                                                                        |
+| scide              |           | SuperCollider Integrated Development Environment. The main code-interaction interface                                                                            |
+| sclang             |           | SuperCollider language. Evaluates code and displays results                                                                                                      |
+| scsynth            |           | SuperCollider synthesis server. Receives OSC messages and produces audio                                                                                         |
+| smoothing filter   |           | Reduces jitter in unstable signals. Common smoothing filters are \emph{moving average} and \emph{moving median}                                                  |
+| trigger            |           | In the server, a trigger happens when a signal crosses 0: i.e., when the previous sample was $\le$ 0 and the current sample is > 0                               |
+| UGen               |           | A Unit Generator, defining a signal-processing operation that runs in the audio server                                                                           |
+| variable           |           | A placeholder for an object, necessary to recall an object later and address method calls to it                                                                  |
 
 
 * Classes 							   :noexport:
@@ -33,43 +39,74 @@
 | Term          | Plural      | Description                                                                                                                                                        |
 |---------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Array         |             | An ordered list of items with a fixed maximum number of items. When adding, be sure to reassign: \cd{array = array.add(item)}                                      |
+| Buffer        |             | An object in the audio server that can hold large amounts of audio or other data. Used for sample playback and soundfile input/output                              |
 | ControlSpec   |             | Defines a numeric range, with low and high values, a curve, step size (for quantization) and a default value                                                       |
+| Function      |             | A code block, with local variables and arguments, that can be executed at any time by calling ``value'' on it. A function always returns exactly one result object |
 | MIDIdef       |             | MIDIdef is global, named storage for MIDIFuncs, just like OSCdef is global storage for OSCFuncs                                                                    |
 | MIDIFunc      |             | Receives incoming MIDI messages. Its design is very much like OSCFunc; only the specific parameters differ                                                         |
+| Ndef          |             | ``NodeProxy definition'': Convenient, global storage for NodeProxies                                                                                               |
 | NetAddr       |             | Represents a port for network communication: an IP address (e.g. \cd{"127.0.0.1"}) and a port number                                                               |
+| NodeProxy     | NodeProxies | A hot-swappable placeholder for a Synth on the server                                                                                                              |
 | OSCdef        |             | Like Pdef and Tdef, OSCdef is global storage for OSCFunc responders                                                                                                |
 | OSCFunc       |             | Receives Open Sound Control messages. The ``Func'' is a callback function, whose arguments are \cd{msg, time, addr, recvPort}                                      |
 | Pdef          |             | Global storage for pattern proxies, where the patterns produce sequencing events                                                                                   |
+| Platform      |             | Holds settings and file paths that are specific to the operating system                                                                                            |
 | ProxySpace    |             | An Environment that automatically makes a NodeProxy from any item in it                                                                                            |
 | ServerOptions |             | Configuration options for scsynth, including soundcard, are variables in this class. \cd{s.options} controls the bootup options for \ci{s}                         |
+| String        |             | A list of characters that behaves like text                                                                                                                        |
+| Symbol        |             | Like a String, but ``atomic'': You can't manipulate the contents of a Symbol, only use it as an identifier                                                         |
 | Tdef          |             | Global storage for Tasks. Give the task function a name, and Tdef will treat the function as a Task                                                                |
-| Function      |             | A code block, with local variables and arguments, that can be executed at any time by calling ``value'' on it. A function always returns exactly one result object |
-| NodeProxy     | NodeProxies | A hot-swappable placeholder for a Synth on the server                                                                                                              |
-| Ndef          |             | ``NodeProxy definition'': Convenient, global storage for NodeProxies                                                                                               |
 
 
 * Methods							   :noexport:
 #+name: mth
-| Term     | Plural | Description                                                                                                                          |
-|----------+--------+--------------------------------------------------------------------------------------------------------------------------------------|
-| free     |        | Removes a resource that was previously allocated, including Buffers and MIDI or OSC responders                                       |
-| langPort |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
-| ar       |        | Create an audio-rate instance of a UGen. The arguments to ``ar'' establish connections to other UGens                                |
-| kr       |        | Create a control-rate instance of a UGen. The arguments to ``kr'' establish connections to other UGens                               |
-| ir       |        | Create a initial-rate (one-shot) instance of a UGen. The arguments to ``ir'' establish connections to other UGens                    |
-| dup      |        | ``Duplicate.'' Often used to copy a mono signal into left and right channels                                                         |
-| boot     |        | The method to start a server in code (rather than through the editor interface)                                                      |
-| set      |        | On a synth node or NodeProxy, set a new value for a control input: \cd{n.set(\textbackslash name, value...)}                         |
+| Term        | Plural | Description                                                                                                                          |
+|-------------+--------+--------------------------------------------------------------------------------------------------------------------------------------|
+| addSpec     |        | Associates control inputs in a proxy (e.g., Ndef) with ControlSpecs, defining the inputs' useful ranges in GUIs                      |
+| ar          |        | Create an audio-rate instance of a UGen. The arguments to ``ar'' establish connections to other UGens                                |
+| boot        |        | The method to start a server in code (rather than through the editor interface)                                                      |
+| dup         |        | ``Duplicate.'' Often used to copy a mono signal into left and right channels                                                         |
+| exprange    |        | Converts a UGen's range into a different exponential range                                                                           |
+| free        |        | Removes a resource that was previously allocated, including Buffers and MIDI or OSC responders                                       |
+| ir          |        | Create a initial-rate (one-shot) instance of a UGen. The arguments to ``ir'' establish connections to other UGens                    |
+| kr          |        | Create a control-rate instance of a UGen. The arguments to ``kr'' establish connections to other UGens                               |
+| langPort    |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
+| range       |        | Converts a UGen's range into a different linear range                                                                                |
+| read        |        | \cd{Buffer.read()} creates a new buffer in the server and fills it with audio from a sound file                                      |
+| readChannel |        | Like \cd{Buffer.read}, but reads one or more channels in an order you choose                                                         |
+| resourceDir |        | \cd{Platform.resourceDir} points to a directory of extra resources, which are part of a normal SC installation                       |
+| set         |        | On a synth node or NodeProxy, set a new value for a control input: \cd{n.set(\textbackslash name, value...)}                         |
 
 
 * UGens								   :noexport:
 #+name: ugens
-| Type | Term     | Description                                                                                                                        | Arguments               |
-|------+----------+------------------------------------------------------------------------------------------------------------------------------------+-------------------------|
-| Osc  | SinOsc   | Sinewave oscillator                                                                                                                | freq, phase             |
-| IO   | Out      | Writes one or more channels to an audio or control bus. Many \ci{Out} units can write to the same bus; their signals will be mixed | bus, channelsArray      |
-| Pan  | Balance2 | Stereo-to-stereo balancer. When \ci{pos} is --1, you hear only the left channel; when +1, only the right channel                   | left, right, pos, level |
-| Pan  | Pan2     | Mono-to-stereo panner. \ci{in} must be a mono signal. \ci{pos}: Full left is --1, right is +1                                      | in, pos, level          |
+| Type  | Term          | Description                                                                                                                                                | Arguments                                                                       |
+|-------+---------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------|
+| Buf   | BufChannels   | Outputs the number of channels in a buffer. \ci{ir} or \ci{kr}                                                                                             | bufnum                                                                          |
+| Buf   | BufDur        | Outputs the buffer's duration, in seconds. \ci{ir} or \ci{kr}                                                                                              | bufnum                                                                          |
+| Buf   | BufFrames     | Outputs the number of frames in a buffer. \ci{ir} or \ci{kr}                                                                                               | bufnum                                                                          |
+| Buf   | BufRateScale  | Outputs the buffer's sample rate divided by the server's. Used as a rate input, it ensures the sample will play at its original speed. \ci{ir} or \ci{kr}  | bufnum                                                                          |
+| Buf   | BufSampleRate | Outputs a buffer's sample rate (because a file loaded from disk may be at a different rate from the server). \ci{ir} or \ci{kr}                            | bufnum                                                                          |
+| Ctl   | Phasor        | A straight line that loops around at the boundaries. Good for cyclical inputs, like phase or buffer position                                               | trig, rate, start, end, resetPos                                                |
+| Grain | GrainBuf      | An all-purpose granular synthesis UGen, taking the grains from a Buffer. You can provide a custom grain envelope                                           | numChannels, trigger, dur, sndbuf, rate, pos, interp, pan, envbufnum, maxGrains |
+| Grain | PitchShift    | A granular pitch-shifter, for use on a live signal. Maximum range two octaves above and below. Allows slight time and pitch randomness                     | in, windowSize, pitchRatio, pitchDispersion, timeDispersion                     |
+| Grain | TGrains       | A triggered granular synthesis UGen. Every grain has a sine-shaped envelope                                                                                | numChannels, trigger, bufnum, rate, centerPos, dur, pan, amp, interp            |
+| Info  | ControlDur    | \cd{ControlDur.ir} in a synthesis function provides the duration of one control block = $\frac{blocksize}{sr}$                                             | none                                                                            |
+| Info  | ControlRate   | \cd{ControlRate.ir} in a synthesis function provides the server's control rate = $\frac{sr}{blocksize}$                                                    | none                                                                            |
+| Info  | SampleDur     | \cd{SampleDur.ir} in a synthesis function provides the duration of one sample = $\frac{1}{sr}$                                                             | none                                                                            |
+| Info  | SampleRate    | \cd{SampleRate.ir} in a synthesis function provides the server's sample rate                                                                               | none                                                                            |
+| IO    | Out           | Writes one or more channels to an audio or control bus. Many \ci{Out} units can write to the same bus; their signals will be mixed                         | bus, channelsArray                                                              |
+| Osc   | BrownNoise    | A noise generator whose spectrum drops 6 dB every octave. Produced by ``Brownian motion'' in which each sample adds a random number to the previous sample | mul, add                                                                        |
+| Osc   | LFDNoise0     | Generates \ci{freq} random numbers per second, holding the value between each one                                                                          | freq                                                                            |
+| Osc   | LFDNoise1     | Generates \ci{freq} random numbers per second and makes a linear ramp between each one                                                                     | freq                                                                            |
+| Osc   | LFDNoise2     | Generates \ci{freq} random numbers per second and makes a quadratic-interpolation curve between each one                                                   | freq                                                                            |
+| Osc   | PinkNoise     | A noise generator with ``equal power'' across all frequencies, by dropping 3 dB every octave. Also known as $\frac{1}{f}$ noise                            | mul, add                                                                        |
+| Osc   | SinOsc        | Sinewave oscillator                                                                                                                                        | freq, phase                                                                     |
+| Osc   | WhiteNoise    | A noise generator containing all frequencies equally loudly. The sound is extremely bright                                                                 | mul, add                                                                        |
+| Pan   | Balance2      | Stereo-to-stereo balancer. When \ci{pos} is --1, you hear only the left channel; when +1, only the right channel                                           | left, right, pos, level                                                         |
+| Pan   | Pan2          | Mono-to-stereo panner. \ci{in} must be a mono signal. \ci{pos}: Full left is --1, right is +1                                                              | in, pos, level                                                                  |
+| Trig  | Dust          | Produces randomly timed triggers, averaging \emph{density} triggers per second                                                                             | density                                                                         |
+| Trig  | Impulse       | Produces triggers at equal time intervals---single sample impulses, \emph{freq} times per second                                                           | freq, phase                                                                     |
 
 
 * src blocks 							   :noexport:

@@ -637,7 +637,7 @@ Ndef(\sine).set(\amp, 0.1);
 *** Proxies and "set"
 **** What if you want a signal to control frequency?
      1. Make another \clss{Ndef}.
-	- Output should be in the frequency range.
+	- Output should be in the frequency range: \mth{exprange}.
 	- /Control rate/, matching the control input's rate.
      2. Set the control input to the \clss{Ndef}.
 #+name: ndset2
@@ -650,7 +650,228 @@ Ndef(\randF, {
 Ndef(\sine).set(\freq, Ndef(\randF));
 #+END_SRC
 
+*** Article: LFDNoise					    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+     - \ugen{LFDNoise1} :: "Low-Frequency Dynamic Noise":
+       - Low-frequency: When you modulate an audio processor's input,
+         it's relatively slow, generally below 20 Hz. (Audio noise
+         generators include \ugen{WhiteNoise}, \ugen{PinkNoise} and
+         \ugen{BrownNoise}.)
+       - Dynamic: This is specific to SuperCollider. There are other
+         \ci{LFNoise*} UGens, but they don't respond quickly to a
+         changing input frequency. The \ci{LFDNoise*} units behave the
+         way you would expect. Use them instead.
+       - Noise: In the audio world, noise is another word for random
+         numbers.
+       - 1: Make a straight-line ramp between the random values. Other
+         choices are: 0 = hold the random value until the next one
+         (stairstep effect), and 2 = make a slight curve (a bit
+         smoother).\glsadd{LFDNoise0}\glsadd{LFDNoise2}
+
+At this early stage, everything we do with sound will introduce many
+new UGens. It's like learning a new language: One new word draws in
+several other, related words.
+
 ** Granular synthesis
+*** Granular synthesis
+**** Granular synthesis: Complex sounds from clouds of grains.
+     Grain: A very short fragment of sound, under an \egls{envelope}.
+     - The envelope just makes a quick fade in/out.
+#+BEGIN_CENTER
+#+ATTR_LATEX: :height 1.25in
+[[../01/img/grains.png]]
+#+END_CENTER
+**** One grain is boring.
+     Thousands of grains blend together.
+
+*** Granular synthesis UGens
+**** Granular synthesis has a lot of moving parts:
+     - Source sound: Soundfile? Live input? Oscillators?
+     - Multiplying by the envelope.
+     - Overlapping possibly hundreds of these.
+**** SC has a number of UGens to make it easier.
+     - \ugen{TGrains} :: The original.
+     - \ugen{GrainBuf} :: Similar, but you can make your own grain envelope.
+     These work on similar principles. We'll use \ugen{GrainBuf}.
+
+*** GrainBuf's UGen inputs
+**** Granular synthesis has a lot of options.
+     So, \ugen{GrainBuf} has a lot of inputs:
+     - numChannels :: Output channels. Normally 2.
+     - trigger :: Each \egls{trigger} starts a new grain.
+     - dur :: Duration of the next grain (in seconds).
+     - sndbuf :: Buffer number for the source. Must be mono.
+     - rate :: How fast or slow to play the grain's audio.
+     - pos :: Grain start time within the buffer. \\
+       Normalized: 0--1.
+     - interp :: \eGls{interpolation}. Normally use the default (2).
+     - pan :: This grain's pan position.
+     - envbufnum :: Optional: A buffer with the grain envelope shape.
+
+*** Introductory demo
+**** Let's listen to some things granular synthesis can do.
+#+name: grain1
+#+caption: First demonstration of granular synthesis.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\g, { |tfreq = 15, overlap = 4, rate = 1, pos = 0.5|
+   var trig = Impulse.ar(tfreq),
+   dur = overlap / tfreq;
+   GrainBuf.ar(2, trig, dur, b, rate, pos);
+});
+Ndef(\g).addSpec(
+   \tfreq, [4, 50, \exp], \overlap, [1, 8, \exp],
+   \rate, [0.125, 8, \exp], \pos, [0, 1]
+);
+
+Ndef(\g).gui;
+#+END_SRC
+     \ci{addSpec}: To explain later.
+
+*** Using ``pos'' to scan the file
+**** Move \ci{pos} through the file automatically.
+     Creates the illusion of playing longer sections.
+     - How? The /modulation/ trick from before.
+     - The basis of time stretching and pitch shifting.
+#+name: grain2
+#+caption: Scanning through the file, by modulating "pos."
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\pos, { Phasor.kr(0, ControlDur.ir/BufDur.kr(b), 0, 1) });
+Ndef(\g).set(\pos, Ndef(\pos));
+
+Ndef(\pos, { |scan = 1|
+   Phasor.kr(0, scan * ControlDur.ir / BufDur.kr(b), 0, 1)
+});
+Ndef(\pos).addSpec(\scan, [0.25, 4, \exp]);
+Ndef(\pos).gui;
+
+Ndef.clear;  // when done
+#+END_SRC
+
+*** Granular synthesis concepts
+**** How does that work?
+     Each grain depends on these concepts:
+     - *Where* to find the grain's audio: \clsspl{Buffer} and \eglspl{frame}. \pause
+     - *When* to make the grain: \eGlspl{trigger}. \pause
+     - *How long* the grain should last.
+
+*** Buffers
+**** \clsspl{Buffer} store audio in memory.
+     (Actually, any information---but usually audio.)
+     - \cd{Buffer.read} to load sound files from disk.\glsadd{read} \\
+       Also \cd{Buffer.readChannel} to extract channels.\glsadd{readChannel}
+#+name: buf1
+#+caption: Read a buffer from disk, and see its properties.
+#+BEGIN_SRC {SuperCollider} -i
+b = Buffer.read(s,
+   Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+-> Buffer(0, nil, nil, nil, /usr/local/share/SuperCollider/sounds/a11wlk01.wav)
+
+b;
+-> Buffer(0, 188893, 1, 44100, /usr/local/share/SuperCollider/sounds/a11wlk01.wav)
+#+END_SRC
+
+*** Note: strings					    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+**** Side note: Strings and file paths
+What exactly is that third line doing? It's building a \egls{path} to
+the sound file. Paths---actually, any kind of text---exist in
+SuperCollider as \clsspl{String}. ("String" is a standard programming
+term for a sequence of characters.)
+
+The way to write a string is to enclose it in straight quote marks, as
+in the second half of that line: @@latex:\cd{"sounds/a11wlk01.wav"}@@.
+
+The \clss{Platform} class describes features that are unique to the
+machine's operating system, including file locations. The
+SuperCollider installation has to put support files in a place that
+makes sense for the OS, and this is different in Linux, OSX and
+Windows. Many of these files are in the "resource directory."
+Platform's method \mth{resourceDir} gives you a string with the full
+path to that location. On my Linux machine, \cd{Platform.resourceDir;}
+returns =/usr/local/share/SuperCollider=; on Mac, it's different.
+
+\ci{+/+} joins the two together, and puts a path separator in between,
+if needed. So, in Linux, the sound file path ends up being
+=/usr/local/share/SuperCollider/sounds/a11wlk01.wav=.
+
+*** Buffer loading is asynchronous
+**** Look carefully at the output from that command.
+#+begin_src {} -i
+Buffer(0, nil, nil, nil, 
+   /usr/local/share/SuperCollider/sounds/a11wlk01.wav)
+
+Buffer(0, 188893, 1, 44100, 
+   /usr/local/share/SuperCollider/sounds/a11wlk01.wav)
+#+end_src
+     - First \clss{Buffer} line: \mth{read} must return something.\\
+       The buffer object exists in the language, but isn't ready yet. So we see several \ci{nil}s.
+     - Second \clss{Buffer}: After reading is finished.\\
+       Now the buffer knows how many \glspl{frame} and channels, and the sample rate.
+# **** You must \mth{sync} before using a buffer loaded from disk.
+
+*** Frames
+**** What's a \egls{frame}?
+     - A mono sound file is just a stream of samples:\\
+       \cd{s$_0$, s$_1$, s$_2$, ... s$_n$}
+     - A stereo sound file has two samples at every instant:
+       - @@latex:\cd{[s$_{0a}$, s$_{0b}$]}@@,
+       - @@latex:\cd{[s$_{1a}$, s$_{1b}$]}@@,
+       - @@latex:\ldots{}@@
+       - @@latex:\cd{[s$_{na}$, s$_{nb}$]}@@
+     - Each one of those lines is a \egls{frame}.\\
+       One sample per channel, at a given time.
+
+*** Loading sound file fragments by frames
+**** \Glspl{frame} are another time measure for sound files or buffers.
+     - \cd{frames = seconds * sampleRate}. \\
+       \cd{seconds = frames / sampleRate}.
+     - It doesn't matter how many channels.
+**** Example:
+     To read 0.5 seconds starting at 1 second:
+     - \ci{startFrame} = 1 sec * 44100 frames/sec = 44100 frames
+     - \ci{numFrames} = 0.5 sec * 44100 frames/sec = 22050 frames
+
+*** GrainBuf: Normalized ``pos''
+**** \ugen{GrainBuf}'s \ci{pos} is 0--1.
+     This is easier, later, for external control.
+     - \cd{pos = frames / BufFrames.kr(bufnum)}.\glsadd{BufFrames}
+     - \cd{pos = seconds / BufDur.kr(bufnum)}.\glsadd{BufDur}
+
+*** Phasor: Scanning ``pos''
+**** \ugen{Phasor} is a repeating ramp over a given range.
+     Use it for moving forward through the file.
+     - Its \ci{rate} is per output value.
+     - For seconds, scale by the calculation rate:
+       - Audio rate: Use \ugen{SampleDur}.
+       - Control rate: Use \ugen{ControlDur}.
+     - Then divide by \ugen{BufDur}.
+     \cd{Phasor.kr(0, ControlDur.ir / BufDur.kr(b), 0, 1)}.
+
+*** Triggers
+**** *Problem:* Signals are continuous.
+     How to identify specific /moments of time/ in them?
+**** *SC's solution:* \eGlspl{trigger}.
+     In a trigger:
+     - The previous value was $\leq 0$.
+     - The current value is $> 0$.
+
+*** Impulse generators
+**** Normally, triggers are \eglspl{impulse}.
+     A single nonzero sample, surrounded by silence.
+     - \ugen{Impulse} :: Equally-timed impulses.
+     - \ugen{Dust} :: Randomly-timed impulses.
+#+BEGIN_CENTER
+#+ATTR_LATEX: :height 0.8in
+[[../01/img/impulses.png]]
+#+END_CENTER
+     Typically, use \ugen{Impulse} for granular synthesis.
+     - So you can predict the time between impulses.
+
+*** Grain durations
 
 * Footnotes
 
