@@ -556,53 +556,6 @@ several other, related words.
      - pan :: This grain's pan position.
      - envbufnum :: Optional: A buffer with the grain envelope shape.
 
-*** Introductory demo
-**** Let's listen to some things granular synthesis can do.
-#+name: grain1
-#+caption: First demonstration of granular synthesis.
-#+BEGIN_SRC {SuperCollider} -i
-Ndef(\g, { |tfreq = 15, overlap = 4, rate = 1, pos = 0.5|
-   var trig = Impulse.ar(tfreq),
-   dur = overlap / tfreq;
-   GrainBuf.ar(2, trig, dur, b, rate, pos);
-});
-Ndef(\g).addSpec(
-   \tfreq, [4, 50, \exp], \overlap, [1, 8, \exp],
-   \rate, [0.125, 8, \exp], \pos, [0, 1]
-);
-
-Ndef(\g).gui;
-#+END_SRC
-     \ci{addSpec}: To explain later.
-
-*** Using ``pos'' to scan the file
-**** Move \ci{pos} through the file automatically.
-     Creates the illusion of playing longer sections.
-     - How? The /modulation/ trick from before.
-     - The basis of time stretching and pitch shifting.
-#+name: grain2
-#+caption: Scanning through the file, by modulating "pos."
-#+BEGIN_SRC {SuperCollider} -i
-Ndef(\pos, { Phasor.kr(0, ControlDur.ir/BufDur.kr(b), 0, 1) });
-Ndef(\g).set(\pos, Ndef(\pos));
-
-Ndef(\pos, { |scan = 1|
-   Phasor.kr(0, scan * ControlDur.ir / BufDur.kr(b), 0, 1)
-});
-Ndef(\pos).addSpec(\scan, [0.25, 4, \exp]);
-Ndef(\pos).gui;
-
-Ndef.clear;  // when done
-#+END_SRC
-
-*** Granular synthesis concepts
-**** How does that work?
-     Each grain depends on these concepts:
-     - *Where* to find the grain's audio: \clsspl{Buffer} and \eglspl{frame}. \pause
-     - *When* to make the grain: \eGlspl{trigger}. \pause
-     - *How long* the grain should last.
-     - *How fast* to play the audio (\ci{rate}).
-
 *** Buffers
 **** \clsspl{Buffer} store audio in memory.
      (Actually, any information---but usually audio.)
@@ -661,6 +614,53 @@ Buffer(0, 188893, 1, 44100,
      - Second \clss{Buffer}: After reading is finished.\\
        Now the buffer knows how many \glspl{frame} and channels, and the sample rate.
 # **** You must \mth{sync} before using a buffer loaded from disk.
+
+*** Introductory demo
+**** Let's listen to some things granular synthesis can do.
+#+name: grain1
+#+caption: First demonstration of granular synthesis.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\g, { |tfreq = 15, overlap = 4, rate = 1, pos = 0.5|
+   var trig = Impulse.ar(tfreq),
+   dur = overlap / tfreq;
+   GrainBuf.ar(2, trig, dur, b, rate, pos);
+});
+Ndef(\g).addSpec(
+   \tfreq, [4, 50, \exp], \overlap, [1, 8, \exp],
+   \rate, [0.125, 8, \exp], \pos, [0, 1]
+);
+
+Ndef(\g).gui;
+#+END_SRC
+     \ci{addSpec}: To explain later.
+
+*** Using ``pos'' to scan the file
+**** Move \ci{pos} through the file automatically.
+     Creates the illusion of playing longer sections.
+     - How? The /modulation/ trick from before.
+     - The basis of time stretching and pitch shifting.
+#+name: grain2
+#+caption: Scanning through the file, by modulating "pos."
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\pos, { Phasor.kr(0, ControlDur.ir/BufDur.kr(b), 0, 1) });
+Ndef(\g).set(\pos, Ndef(\pos));
+
+Ndef(\pos, { |scan = 1|
+   Phasor.kr(0, scan * ControlDur.ir / BufDur.kr(b), 0, 1)
+});
+Ndef(\pos).addSpec(\scan, [0.25, 4, \exp]);
+Ndef(\pos).gui;
+
+Ndef.clear;  // when done
+#+END_SRC
+
+*** Granular synthesis concepts
+**** How does that work?
+     Each grain depends on these concepts:
+     - *Where* to find the grain's audio: \clsspl{Buffer} and \eglspl{frame}. \pause
+     - *When* to make the grain: \eGlspl{trigger}. \pause
+     - *How long* the grain should last.
+     - *How fast* to play the audio (\ci{rate}).
 
 *** Frames
 **** What's a \egls{frame}?
