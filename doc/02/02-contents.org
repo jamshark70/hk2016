@@ -1,0 +1,156 @@
+#+startup: beamer
+
+* Interactive audio technology
+** Interactive audio technology
+*** Interactive audio technology
+**** *Interactive audio:* The sound responds in real time.
+     Responds to what? Somebody's /action/.
+     - People work in the physical world.
+     - Computers work with information. \pause
+**** The key to interaction:
+     #+BEGIN_CENTER
+     Physical action $\to$ data (numbers).
+     #+END_CENTER
+
+*** Devices for interaction
+**** /Action $\to$ data/ requires a control device.
+     - *Mouse:* Points at one thing at a time. \pause
+     - *Keyboard:* On/off. No smooth changes. \pause
+     - *MIDI:* Musically useful. Steers your mind towards "playing an instrument." \pause
+     - *Game controllers:* Possible; not often used with computers. \pause
+     - *Touchscreens:* Everybody has one! \\
+       /Lemur/ is specially designed for electronic arts (but $$$!). \pause
+     - *TUIO:* Tangible User Interface Objects (e.g. ReacTable). \pause
+     - *Audio/video signals:* Analysis of microphone or webcam input. \pause
+     - *Sensors, custom devices:* E.g. Arduino, Leap Motion.
+
+*** This workshop: Touchscreens
+**** We'll use phones and tablets in this workshop.
+     Mobile control app: *TouchOSC.* \\
+     Other apps: 
+     - /mrmr/.
+     - /Control/ (Charlie Roberts).
+     - /OSC Surface/.
+     - /QuickOSC/.
+     Many more. Search your app store for "OSC."
+
+** About controls
+*** Buttons and faders
+**** Left							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.65
+     :END:
+***** Controls divide into two categories:
+      - Buttons (按钮) :: Discrete events. \\
+        /When/ something should happen.
+      - Faders (推子) :: Continuous levels. \\
+       	E.g., pitch, volume, pan, speed, etc.
+**** Right							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.3
+     :END:
+     [[../01/img/touchosc-screen.jpg]]
+
+*** Buttons = triggers
+**** Generally, buttons turn things on or off.
+     - You need to know /what/ happened, /when/.
+     - You don't need a lot of detail.
+     - TouchOSC buttons are either 0 or 1.
+**** MIDI keyboards.
+     - A MIDI keyboard is basically an array of buttons!
+     - /Note-on/ and /note-off/.
+     - Note number identifies /which/ trigger.
+     - Velocity is extra detail, but /doesn't change/ after note-on.
+
+*** Normalized range (IMPORTANT)
+**** *Solution:* Normalized vs. actual data /ranges/.
+     *Range:* The lowest and highest meaningful numbers for a control.
+     - Frequency: 20--20,000 Hz
+     - Volume: 0--1 (same as $-\infty$--0 dB).
+     - Pan: --1 to 1.
+    A \egls{normalized} range is always 0--1.
+    - MIDI uses 0--127: $midi \div 127$ is normalized.
+**** Physical controls and displays use /normalized/ ranges.
+     They don't have to care how the number will be used.
+
+*** Data range mapping
+**** To use external information, /map/ it onto a real range.
+     Relevant factors:
+     - /Size/ of the range: $high - low$.
+     - /Offset/: Low boundary's position, relative to 0.
+**** $normData \times scale + offset$ is a common pattern.
+
+*** Data range mapping: Panning
+**** For example, panning.
+     - Real range = --1 to 1.
+     - Incoming \gls{normalized} range: 0 to 1.
+     - The real range is twice as wide: \\
+       Multiply normal range by 2 $\to$ 0 to 2.
+     - The real range is shifted lower: \\
+       Subtract one: 0 to 2 $\to$ --1 to 1.
+#+BEGIN_CENTER
+$pan = norm \times 2 - 1$
+#+END_CENTER
+
+*** Mapping curves
+**** $normData \times scale + offset$ is \egls{linear} mapping.
+     - *In:* Straight line 0--1.
+     - *Out:* Straight line @@latex:\emph{low}--\emph{high}@@.
+     - 0.1 vs. 0.2 feels the same as 0.5 vs. 0.6.
+**** This is not right for every case.
+     Other mapping styles:
+     - \Gls{exponential} :: Useful for frequencies and durations.
+     - Curved :: Uses a curve factor to "pull" the straight line toward the left or right.
+
+*** Exponential mapping
+**** Frequency is an \egls{exponential} scale.
+     - An octave is always $\times 2$.
+     - 100 $\to$ 200 goes up an octave.
+     - 600 $\to$ 1200 goes up an octave.
+     If you use linear mapping for frequency:
+     - The low part of the control will produce bigger pitch changes.
+     Exponential: Intervals are the same across the entire controller.
+**** This also works for rhythm.
+     - Short notes take less time---so you need more of them.
+**** Demo.
+
+*** Curve mapping
+**** Curve: If it doesn't "feel right" to use linear or exponential.
+     A \egls{curve factor} bends the line.
+     - *Curve = 0:* Straight line.
+     - *Curve < 0:* Pulls the line toward the left.
+     - *Curve > 0:* Pulls the line toward the right.
+     You can "tune" the response how you like.
+**** Demo.
+
+*** Physical data range
+**** TouchOSC (and SC graphics objects) are /virtual/.
+     - They exist in software.
+     - Software defines the range.
+     - No problem to make it exactly 0--1.
+**** The range coming from physical devices may not be 0--1.
+     Especially if you're measuring something in the real world.
+
+*** Measurement and calibration
+**** /Measure/ and /calibrate/ physical devices.
+     *Measurement:*
+     - Before doing anything else, look at the raw numbers coming in.
+     - How low or high do they tend to go?
+     - /Clip/ the range at a reasonable point.
+     *Calibration:*
+     - Measurements can change based on the environment.
+     - You might need to shift the range for performance in different spaces.
+**** Demo.
+
+*** External sources: General plan
+**** This is a good way to approach new controllers:
+     1. /Examine/ the raw data coming in.
+	- Print the numbers on screen.
+	- Collect them into arrays and make graphs.
+	- Look for usable ranges.
+     2. /Data repair/. \\
+	Only if needed: \Glspl{smoothing filter}, etc.
+     3. /Map/ the data onto audio or control inputs.
+	- /Normalize/ the raw data if needed.
+	- Then convert to the desired range.
+

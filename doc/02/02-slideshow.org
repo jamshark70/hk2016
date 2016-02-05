@@ -6,7 +6,7 @@
 
 #+startup: beamer
 
-#+TITLE: Part 1: Introductory concepts
+#+TITLE: Part 2: Interactivity and external control
 #+DATE: \today
 #+AUTHOR: H. James Harkins
 #+EMAIL:
@@ -14,5 +14,5 @@
 #+INCLUDE: "../slidehead.org"
 #+include: "../glossary.org"
 
-#+include: "./01-contents.org" :minlevel 1
+#+include: "./02-contents.org" :minlevel 1
 
