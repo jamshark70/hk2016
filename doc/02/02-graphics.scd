@@ -141,3 +141,22 @@ Ndef(\oscil, { |freq = 440|
 // When you're finished with mobile control:
 OSCdef(\sl1).free;
 Ndef(\oscil).clear;
+
+
+// open GUI
+PR(\mobileWorkshopGUI) => BP(\mw);
+
+// granular synth
+(
+Ndef(\drone, { |bufnum, amp = 0.1, tfreq = 20, overlap = 8, pos = 0.5, rate = 1|
+	var trig = Impulse.ar(tfreq),
+	dur = overlap / tfreq,
+	pan = 0;
+	GrainBuf.ar(2, trig, dur, bufnum, rate, pos, pan: pan, mul: amp)
+});
+)
+
+Ndef(\drone).play;
+Ndef(\drone).stop;
+
+Ndef(\drone).addSpec(\pos, [0, 1]);

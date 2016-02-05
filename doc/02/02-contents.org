@@ -480,3 +480,92 @@ Ndef(\oscil, { |freq = 440|
      - Parameters are different because MIDI is not OSC.
      - We won't discuss details; see \clss{MIDIFunc}'s help file.
 
+* Performance project
+** Performance project: Setup
+*** Open the GUI
+**** If the environment is set up, open the GUI:
+#+name: gui1
+#+caption: Open the performance GUI.
+#+BEGIN_SRC {SuperCollider} -i
+PR(\mobileWorkshopGUI) => BP(\mw);
+#+END_SRC
+
+*** Overview
+**** Left-hand side: OSC section.
+     - The address and port to enter into TouchOSC.
+     - After connecting, it shows the phone's address and port.
+     - A mirror of the TouchOSC Mix16 display.
+     - Menus to connect OSC controls to \clss{Ndef} inputs.
+**** Right-hand side: Buffer section.
+     - Load buffers from disk and \mth{free} them.
+     - Bottom section automatically finds \glspl{control input} with \ci{buf}.
+       - Choose the buffer for each from a menu.
+
+*** Load a buffer
+**** Click "Load audio file."
+     Choose the file from the dialog.
+     - Not too long! Pre-trim the file using an audio editor.
+     - Stereo files are automatically split into L and R. \\
+       (Remember, mono buffers only for granular synthesis.)
+**** If you make a mistake:
+     - Highlight the file in the list.
+     - Click "Free buffer."
+**** Or, you can \clss{Buffer}\ci{.}\mth{read} by hand.
+     The new buffer will be added to the list.
+
+*** Assign buffer to control
+**** Make a granular \clss{Ndef}.
+#+name: gran2a
+#+caption: Granular synth, to integrate with the GUI.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\drone, { |bufnum, amp = 0.1, tfreq = 20, overlap = 8, pos = 0.5, rate = 1|
+   var trig = Impulse.ar(tfreq),
+   dur = overlap / tfreq,
+   pan = 0;
+   GrainBuf.ar(2, trig, dur, bufnum, rate, pos, pan: pan, mul: amp)
+});
+#+END_SRC
+**** A buffer mapping for \ci{drone} and \ci{bufnum} should appear.
+     Any control name including "buf."
+
+*** Article: Bufnum default				    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+**** Why is a buffer assigned automatically?
+That depends partly on luck. Remember that a control input's default
+is 0, unless you specify a different one---so here, we can assume
+\ci{bufnum} is 0.
+
+It's very likely that the first buffer you load will occupy buffer
+number 0. In that case, the GUI will detect that the \ci{Ndef} is
+using buffer 0, and show the name of buffer 0 in the menu for that
+control.
+
+If you have already loaded and released some buffers, then buffer 0
+might be empty. In that case, the graphic display would be different.
+
+*** Range mapping
+**** Before connecting a control to OSC, set its range.
+     *Important!* Otherwise, the control will not behave well.
+**** Use \mth{addSpec}.
+     \cd{Ndef(\textbackslash name).addSpec(\textbackslash ctlName, spec);}.
+     - \ci{spec}: \cd{[lowValue, highValue, warp]}, where \ci{warp} is:
+       - \ci{\textbackslash lin} :: Linear range. (Optional.)
+       - \ci{\textbackslash exp} :: Exponential range.
+       - \ci{number} :: Curve mapping.
+#+name: gran2b
+#+caption: Assign a range to the `pos' parameter.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\drone).addSpec(\pos, [0, 1]);
+#+END_SRC
+
+*** Add OSC mapping
+**** From the menu, choose ``-- to Ndef param.''
+     Then, three menus:
+     1. OSC path coming from TouchOSC, e.g. \ci{/1/fader1}.
+     2. \clss{Ndef} name.
+     3. \Gls{control input} name.
+**** Now, the control should be connected.
+     - (According to the range mapping given by \mth{addSpec}.)
+     - Remove a mapping using the X button.
