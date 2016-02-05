@@ -12,6 +12,20 @@
      Physical action $\to$ data (numbers).
      #+END_CENTER
 
+#+call: makegloss :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: makegloss
+
+#+name: classgloss
+#+call: makegloss(tbl=class,glosstype="class") :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: classgloss
+
+#+name: mthgloss
+#+call: makegloss(tbl=mth,glosstype="mth") :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: mthgloss
+
+#+call: ugengloss :exports (if hjh-exporting-slides "results" "none") :results value latex
+#+results: ugengloss
+
 *** Devices for interaction
 **** /Action $\to$ data/ requires a control device.
      - *Mouse:* Points at one thing at a time. \pause
@@ -49,7 +63,8 @@
      :PROPERTIES:
      :BEAMER_col: 0.3
      :END:
-     [[../01/img/touchosc-screen.jpg]]
+     #+ATTR_LATEX: :float t :height 2.2in
+     [[../02/img/touchosc-screen.jpg]]
 
 *** Buttons = triggers
 **** Generally, buttons turn things on or off.
@@ -153,4 +168,315 @@ $pan = norm \times 2 - 1$
      3. /Map/ the data onto audio or control inputs.
 	- /Normalize/ the raw data if needed.
 	- Then convert to the desired range.
+
+* Open Sound Control in SuperCollider
+** Open Sound Control fundamentals
+*** Why mobile control in this workshop?
+**** Because: Just about everybody has a smartphone.
+     If you have a smartphone, there's probably an app for it that will send OSC.
+**** The main elements:
+     - \clss{OSCFunc}: Attach a callback function to incoming OSC messages.
+     - Filtering messages by:
+       - Device or application, identified by a \clss{NetAddr}.
+       - Command \eglspl{path}, such as \ci{"/1/fader"}.
+
+*** OSCFunc tracing: Watching OSC come in
+**** Important idea: /Inspect/ the input!
+     The device will tell you what commands it's sending.
+     - Issue the following commands.
+     - Wait a few seconds in between.
+#+name: osc1
+#+caption: How to trace incoming OSC messages.
+#+begin_src {SuperCollider} -i
+OSCFunc.trace(true);
+OSCFunc.trace(false);
+#+end_src
+**** If the server is booted, you'll see something like:
+#+begin_src {} -i
+OSC Message Received:
+   time: 1392825887.1304
+   address: a NetAddr(127.0.0.1, 57110)
+   recvPort: 57120
+   msg: [ /status.reply, 1, 0, 0, 2, 74, 1.0463403463364,
+      1.0534679889679, 44100, 44099.530279753 ]
+#+end_src
+
+*** OSC message structure
+**** What is this message made of?
+#+begin_src {} -i
+msg: [ /status.reply, 1, 0, 0, 2, 74, 1.0463403463364,
+   1.0534679889679, 44100, 44099.530279753 ]
+#+end_src
+     - First: /command \gls{path}/---here, @@latex:\cd{/status.reply}@@.
+       - Any string is a command.
+       - The sending app can organize commands into groups.
+       - Groups are separated by \ci{/} in the string.
+       - @@latex:\cd{/status.reply}@@ is for the server's status.
+     - Any combination of numbers and strings can follow.\\
+       Here, the information you see in the server status line.
+
+*** OSCFunc: Receiving OSC
+**** Let's look at what OSC brings in.
+     Create a very basic \clss{OSCFunc}, which prints its inputs.
+     - The callback function gets four arguments.\\
+       Usually, you need only \ci{msg}.
+       - msg :: An \clss{Array}, one item per message value.
+       - time :: The system's time of receipt.
+       - addr :: The \clss{NetAddr} *from* which the message came.
+       - recvPort :: The SuperCollider port *to* which the message came.
+     - You have to give a command path to match.
+#+name: osc2
+#+caption: The simplest possible OSCFunc.
+#+begin_src {SuperCollider} -i
+o = OSCFunc({ |msg, time, addr, recvPort|
+   [msg, time, addr, recvPort].postln;
+}, '/status.reply');  // command path is here
+
+o.free;  // when you're tired of the printing
+#+end_src
+
+*** Filtering messages
+**** OSC can come from many sources, with many messages.
+     Your \clss{OSCFunc} should not try to respond to them all!
+**** Filtering options
+     - Command path (we just saw this)
+     - \clss{NetAddr}, which identifies:
+       - The sending machine, by IP address.\\
+	 Your local machine is \cd{"127.0.0.1"}.
+       - The sending application, by port.\\
+	 Each application must send from a different port number.\\
+	 Filtering by port means listening to just one app.
+     - Other values in the message. (See OSCFunc help.)
+
+** OSC and mobile control
+*** Mobile control overview
+**** To use your phone or tablet:
+     1. Set up TouchOSC or mrmr on the phone.\\
+	Keep the "to" and "from" addresses in mind.\\
+	/Everybody/ gets confused about this at first.
+     2. Trace OSC in SC to learn the command paths.
+     3. Create \clsspl{OSCFunc} to translate messages into actions.
+**** A little later, we'll use a graphic interface.
+     - That will simplify some of the usage.
+     - But, you should see what the messages look like first.
+
+*** Article: Note on ports				    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+**** Addresses, /from/ and /to/.
+One of the most common SC types of questions on the SuperCollider
+mailing list is about \ci{addr} and \ci{recvPort} for OSC
+messages. It's confusing at first because there are two addresses and
+two ports involved:
+
+- The address and port /from/ which messages are coming. For every
+  incoming message, SuperCollider bundles both of these into a
+  \clss{NetAddr} object and passes this to the \ci{addr} argument of
+  the OSC function. \\
+  In these examples, the /from/ address is your phone. TouchOSC
+  doesn't let you choose the outgoing port from the phone (which
+  becomes the incoming port in SuperCollider). It chooses this port
+  for you when you tap "Done" on the phone.
+
+- The address and port /to/ which the messages are going. The messages
+  are coming /to/ SuperCollider on the local computer---so the address
+  will always be \ci{localhost} = \cd{"127.0.0.1"}. So there is no
+  need to pass a /to/ address into the function. \\
+  SuperCollider opens a port for receiving; normally this
+  is 57120. You may manually open other ports. In that case, the /to/
+  port comes into the function as \ci{recvPort}. In most cases, you
+  don't have to worry about this.
+
+If you have several devices sending OSC to the same computer, the
+\ci{addr} is how you distinguish the message sources.
+
+*** Set up TouchOSC or mrmr
+**** Left							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.65
+     :END:
+***** Most important are the network settings
+      - Host :: The IP address of the /computer/.\\
+	Use the system command line to find out.
+	- Linux, OSX: =ifconfig=
+	- Windows: =ipconfig=
+      - Port (out) :: The receiving port in /SuperCollider/.
+      - Port (in) :: The port SC should send /to/.
+      - Local IP :: The phone's IP address.
+**** Right							      :BMCOL:
+     :PROPERTIES:
+     :BEAMER_col: 0.35
+     :END:
+     #+begin_center
+     #+attr_latex: :height 0.8in
+     [[../02/img/touchosc-net.png]]
+     #+end_center
+
+*** TouchOSC network settings
+**** You /must/ set the host and outgoing port!
+     - Host
+       - In Linux, running =ifconfig= dumps a bunch of output.
+       - The =wlan0= section shows the computer's IP:\\<all>
+	 =inet addr:192.168.1.103=
+       - The TouchOSC host should be whatever is shown here.
+     - Port
+       - SC's default language port is 57120.\\
+	 This will almost always work. If not, ask SC for the real
+         port number: \cd{NetAddr.langPort;}.\glsadd{langPort}
+**** Incoming port and local IP allow SC to change the phone's display.
+     Leave them alone for now.
+
+*** Trace messages
+**** Use OSCFunc tracing to learn the command paths.
+     1. Tap /Done/.\\
+	This means: Done with setup.
+     2. Run \cd{OSCFunc.trace(true, true)}.\\
+	\ci{true} means: Hide the server status messages.
+     3. Touch some of the phone's controls. You should see messages like:
+	#+begin_src {}
+	[ /1/fader1, 0.38026785850525 ]
+	[ /1/toggle1, 1 ]
+	[ /1/fader2, 0.33978831768036 ]
+	[ /1/toggle2, 1 ]
+	[ /1/fader3, 0.38026785850525 ]
+	[ /1/toggle3, 1 ]
+	[ /1/xy, 0.54863464832306, 0.30632436275482 ]
+	#+end_src
+	If you're using mrmr, the messages will be different.
+     4. Stop tracing: \cd{OSCFunc.trace(false)}.
+
+*** OSCFunc filter for your phone
+**** Pick one of the faders, and make an OSCFunc.
+     - We'll reuse the variable \ci{o}.
+     - *Good habit:* \mth{free} the variable before putting anything
+       in it.\\
+       (If you forget, \ks{Ctrl-.} can clean up leftovers.)
+     - *Important:* Put your phone's local IP address into the
+       \clss{NetAddr}. (\ci{nil} is important too!)
+#+name: osc3
+#+caption: An OSCFunc to respond to your phone.
+#+begin_src {SuperCollider} -i
+o.free;
+o = OSCFunc({ |msg|  // really, only need the message
+   msg[1].postln;    // 2nd item is the value
+}, '/1/fader1', NetAddr("your phone's IP", nil));
+#+end_src
+**** Now move the fader.
+     You should see only the numbers print.
+
+*** What could go wrong?
+**** Check these things if you don't see the numbers:
+     - *Is the \clss{NetAddr} correct?*\\
+       This is the address where messages come *from*.\\
+       Use the phone's /Local IP/ here---\emph{not} the computer's!
+     - *Is the phone sending?*\\
+       TouchOSC has a small light on screen. Does it light when you touch it?
+     - *Is the computer receiving?*\\
+       Look in the system monitor for network traffic.\\
+       If none, it could be:
+       - Wrong /Host IP/ address in TouchOSC;
+       - WiFi or firewall problem, blocking messages to the computer.
+
+*** TouchOSC message organization
+**** Do you notice any patterns in the command paths?\pause
+     The commands divide in two parts:
+     - =/1= is for the screen number.
+     - =/fader1= gives the control type and its number.
+     The command path just puts them together:\\<all>
+     =/1/fader1=\\<all>
+     =/3/toggle2=, etc.
+
+*** TouchOSC message values
+**** Note the kinds of values that go along with the paths.
+     - What is the fader's range?\pause\\
+       Seems to be 0.0--1.0.\pause
+     - Values for buttons and toggle switches?\pause\\
+       0 = off, 1 = on.
+     - =xy= slider has two values. What do they mean?\pause\\
+       One is x; the other, y.\pause
+**** If you know these ranges, you can map them onto any real range.
+
+*** Connect to sound
+**** \clss{OSCFunc} function sets a control input.
+     Use a \clss{ControlSpec} for range mapping.
+**** \clss{OSCdef}: Convenient way to store OSC responders.
+     Like \clss{Ndef}. See the next example.
+
+*** OSC $\to$ sound example
+**** Don't forget: Put in your phone's IP address, and a real command path.
+#+name: osc4
+#+caption: Controlling frequency by a touchscreen fader. You should change the command path and IP address to match your equipment.
+#+begin_src {SuperCollider} -i
+Ndef(\oscil, { |freq = 440|
+   VarSaw.ar(freq, 0, 0.3, 0.1).dup
+});
+Ndef(\oscil).play;
+
+OSCdef(\sl1, { |msg|
+   Ndef(\oscil).set(\freq, \freq.asSpec.map(msg[1]))
+}, '/1/fader1', NetAddr("192.168.1.100", nil));
+
+// When you're finished with mobile control:
+OSCdef(\sl1).free;
+Ndef(\oscil).clear;
+#+end_src
+
+*** Zipper noise
+**** Frequency changes sound rough.
+     - The \clss{OSCdef} is sending discrete pitches.
+     - The \clss{Ndef} responds instantaneously.
+     Use \ugen{Lag} to smooth the frequency changes.
+     - \ci{freq} is control rate, so \cd{Lag.kr}.
+     - Less important for granular parameters.
+#+name: osc5
+#+caption: Using Lag to make frequency changes smoother.
+#+begin_src {SuperCollider} -i
+Ndef(\oscil, { |freq = 440|
+   freq = Lag.kr(freq, 0.1);
+   VarSaw.ar(freq, 0, 0.3, 0.1).dup
+});
+#+end_src
+
+*** Summary: Mobile control
+**** Setup
+     - =ipconfig= or =ifconfig= to find the computer's IP address.
+     - TouchOSC tells you the phone's IP address.
+     - SuperCollider's default port is 57120.
+**** Trace incoming OSC to learn:
+     - Command paths that TouchOSC or mrmr send out.
+       - Different apps use different commands.
+       - /The principles are the same./
+     - Value ranges coming from the various control types.
+
+*** Summary: Receiving OSC
+**** \clss{OSCFunc} takes action on incoming OSC messages.
+     Important class arguments:
+     - \ci{func} :: The \gls{callback} function. \ci{func}'s arguments are \cd{msg, time, addr, recvPort}. Usually you only need \ci{msg}.
+     - \ci{path} :: The /command \gls{path}/.
+     - \ci{srcID} :: The \clss{NetAddr} where the messages come *from*.
+#      - \ci{argTemplate} :: Matches message values other than path. See the help file.
+     \clss{OSCdef} is global, named storage for \clsspl{OSCFunc} (like \clss{Pdef}).
+**** Mapping to audio
+     - Understand the OSC controller's value ranges.
+     - Use \clsspl{ControlSpec} to convert to the real range.
+     - The callback function should set a synth input.
+
+*** For the project: Add more controls!
+**** The concepts, and setup, might seem complicated.
+     - But, the concepts don't change.
+     - Setup is tricky. \clss{OSCFunc} code is simple.\\
+       (Note: The setup is not any easier in Max/MSP.)
+**** A "playable" mobile interface involves:
+     - Processing the incoming data to make physical sense.
+     - Creating more controls!\\
+       If you can write one \clss{OSCFunc}, it's not any harder to write 10 or 15.
+**** For the project, we'll use a GUI to save time.
+
+*** Side note: MIDI
+**** MIDI input is very much like OSC input!
+     If you know how to get OSC, MIDI is easy.
+     - \clss{MIDIFunc} and \clss{MIDIdef}: Same design as \clss{OSCFunc}.
+     - Parameters are different because MIDI is not OSC.
+     - We won't discuss details; see \clss{MIDIFunc}'s help file.
 

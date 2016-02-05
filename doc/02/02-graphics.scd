@@ -118,4 +118,26 @@ g.free;
 Ndef(\trig).clear;
 
 
+// tracing OSC
+OSCFunc.trace(true);
+OSCFunc.trace(false);
 
+
+// OSC -> freq
+Ndef(\oscil, { |freq = 440|
+	VarSaw.ar(freq, 0, 0.3, 0.1).dup
+});
+Ndef(\oscil).play;
+
+OSCdef(\sl1, { |msg|
+	Ndef(\oscil).set(\freq, \freq.asSpec.map(msg[1]))
+}, '/1/fader1', NetAddr("192.168.1.100", nil));
+
+Ndef(\oscil, { |freq = 440|
+	freq = Lag.kr(freq, 0.1);
+	VarSaw.ar(freq, 0, 0.3, 0.1).dup
+});
+
+// When you're finished with mobile control:
+OSCdef(\sl1).free;
+Ndef(\oscil).clear;
