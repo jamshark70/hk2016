@@ -6,9 +6,11 @@ if(PR.exists(\abstractTouch).not) {
 Library.put(\workshopGuiTheme, (
 	windowBG: nil, // Color.clear,
 	containerBG: Color.gray(0.2),
+	subviewBG: Color.gray(0.33)
 ));
 
-{ |view| view.background_(Color.rand(0.1, 0.6)) } => Func(\randBg);
+// { |view| view.background_(Color.rand(0.1, 0.6)) } => Func(\randBg);
+{ |view| view.background_(Library.at(\workshopGuiTheme, \subviewBG)) } => Func(\randBg);
 
 
 /***** GUI: OSC section *****/
