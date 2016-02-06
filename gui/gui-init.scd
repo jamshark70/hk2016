@@ -1281,7 +1281,11 @@ PR(\abstractMappingGui).clone {
 		{ \bufKey } {  // "Key" is bufnum here
 			defer(e {
 				i = ~model.buffers.detectIndex { |buf| buf.tryPerform(\bufnum) == args[0] };
-				if(i.notNil) { ~bufMenu.value = i };
+				if(i.notNil) {
+					~bufMenu.value = i;
+				} {
+					~bufMenu.value = ~bufMenu.items.size - 1;  // index of "none"
+				};
 			});
 		}
 		{ \bufKeys } {
@@ -1291,9 +1295,13 @@ PR(\abstractMappingGui).clone {
 					if(~bufMenu.items.notNil and: { ~bufMenu.value.notNil }) {
 						oldItem = ~bufMenu.items[~bufMenu.value];
 					};
-					~bufMenu.items = args[0];
+					~bufMenu.items = args[0] ++ ["none"];
 					i = args[0].indexOfEqual(oldItem);
-					if(i.notNil) { ~bufMenu.value = i };
+					if(i.notNil) {
+						~bufMenu.value = i;
+					} {
+						~bufMenu.value = args[0].size;  // index of "none"
+					};
 				});
 			};
 		};

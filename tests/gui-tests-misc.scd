@@ -445,10 +445,11 @@ Ndef(\buf).addSpec(\rate, [0.2, 5, \exp]);
 Ndef(\buf, { |bufnum, amp = 0.1, rate = 1, scanRate = 1|
 	var tRate = 20,
 	trig = Impulse.ar(tRate),
-	bufdur = BufDur.kr(bufnum),
-	phasor = Phasor.kr(0, scanRate * ControlDur.ir / bufdur, 0, 1) * bufdur,
+	bufdur = max(BufDur.kr(bufnum), 0.01),
+	phasor = Phasor.kr(0, scanRate * ControlDur.ir / bufdur, 0, 1) /** bufdur*/,
 	dur = 4 / tRate;
 	TGrains.ar(2, trig, bufnum, rate, phasor, dur, 0, amp);
+	// GrainBuf.ar(2, trig, dur, bufnum, rate, phasor, mul: amp);
 });
 Ndef(\buf).addSpec(\scanRate, [0.2, 5, \exp]);
 Ndef(\buf).trace;
