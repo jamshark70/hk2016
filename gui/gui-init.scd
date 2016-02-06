@@ -1265,13 +1265,6 @@ PR(\abstractMappingGui).clone {
 		currentEnvironment
 	};
 
-/*
-     23:				currentEnvironment.changed(\proxyKey, proxyKey);
-     33:			currentEnvironment.changed(\proxyKey, nil);
-     44:				currentEnvironment.changed(\paramKey, paramKey);
-     56:			currentEnvironment.changed(\bufKey, buffer.bufnum);
-     73:		currentEnvironment.changed(\bufKeys, ~bufKeys);
-*/
 	~update = { |obj, what ... args|
 		var oldItem, i;
 		switch(what)
@@ -1661,13 +1654,13 @@ Proto {
 		~parentLayout.add(~view = View());
 		~view.layout = VLayout(
 			HLayout(
-				~readButton = Button(),
-				~freeButton = Button(),
-			),
-			HLayout(
 				~saveButton = Button(),
 				~loadButton = Button(),
 				~clearButton = Button()
+			),
+			HLayout(
+				~readButton = Button(),
+				~freeButton = Button(),
 			),
 			~bufList = ListView()
 		);
