@@ -1532,10 +1532,6 @@ Proto {
 
 	~restoreBufs = { |file|
 		var line, channel, path, annotation, sf;
-		~bufs.do { |buf|
-			buf.free;
-			~space.server.sync;
-		};
 		while {
 			line = file.getLine;
 			line.notNil and: { line != "BufferMaps" }
@@ -1586,6 +1582,17 @@ Proto {
 			}
 		};
 		line
+	};
+
+	~clearBufs = {
+		{
+			~bufs.copy.reverseDo { |buf|
+				~freeBuf.(buf);
+				// buf.free;
+				~space.server.sync;
+			};
+		}.fork(AppClock);
+		currentEnvironment
 	};
 }.import((touchMapManager: #[/*update,*/ startAliveThread, stopAliveThread, updatePeriod]))
 => PR(\bufferManager);
@@ -1659,7 +1666,8 @@ Proto {
 			),
 			HLayout(
 				~saveButton = Button(),
-				~loadButton = Button()
+				~loadButton = Button(),
+				~clearButton = Button()
 			),
 			~bufList = ListView()
 		);
@@ -1698,6 +1706,38 @@ Proto {
 		~loadButton.states_([["Load buffer set"]])
 		.fixedHeight_(20)
 		.action_(e { ~model.loadDialog() });
+
+		~clearButton.states_([["Clear all buffers"]])
+		.fixedHeight_(20)
+		.action_(e {
+			var w, ok, cancel;
+			if(~model.bufs.size > 0) {
+				w = Window("Clear all?",
+					Rect.aboutPoint(Window.screenBounds.center, 125, 60));
+				w.view.layout = VLayout(
+					[StaticText()
+						.string_("Really clear all buffers?")
+						.align_(\center),
+						stretch: 2
+					],
+					[HLayout(
+						nil,  // spacers
+						ok = Button().maxWidth_(90).minHeight_(36),
+						nil,
+						cancel = Button().maxWidth_(90).minHeight_(36),
+						nil
+					), stretch: 1]
+				);
+				ok.states_([["OK"]]).action_(e {
+					w.close;
+					~model.clearBufs();
+				}).focus(true);
+				cancel.states_([["Cancel"]]).action_({ w.close });
+				w.front;
+			} {
+				"No buffers to clear".warn;
+			};
+		});
 	};
 
 	~readBuf = { |path|

@@ -480,3 +480,7 @@ s.cachedBufferAt(0).free;
 
 // save/load
 BP(\mw).bufMgr.maps[0].listVars
+
+
+// clear all
+BP(\mw).bufMgr.bufs
