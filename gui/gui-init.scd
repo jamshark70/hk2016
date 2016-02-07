@@ -369,6 +369,7 @@ Proto {
 		if(~touchThing.isKindOf(Association)) {
 			key = ~touchThing.key;  // OSC key
 			value = ~packers[~touchKey].value(value);
+			currentEnvironment.changed(\multiCache, key, value);
 		} {
 			key = ~touchKey;
 		};
@@ -914,6 +915,7 @@ Proto {
 
 PR(\abstractScrollParent).clone {
 	~userprep = {
+		~multiCache = ('/1/xy': [0, 0], '/accxyz': [0, 0, 0]);
 		~maps = Array.new;
 		if(~space.isNil) {
 			~space = Ndef.all[\localhost] ?? {
@@ -967,7 +969,7 @@ PR(\abstractScrollParent).clone {
 	~newMap = { |mapKey, guiKey|
 		var map, gui;
 		if(guiKey.isNil) { guiKey = (mapKey ++ "Gui").asSymbol };
-		map = PR(mapKey).copy.prep;
+		map = PR(mapKey).copy.put(\multiCache, ~multiCache).prep;
 		gui = PR(guiKey).copy.prep(map, ~layout, false);  // don't add to layout!
 		if(map.notNil) {
 			~addView.(gui.view);
@@ -977,14 +979,18 @@ PR(\abstractScrollParent).clone {
 		} { nil }
 	};
 
-	~update = { |obj, what|
+	~update = { |obj, what ... args|
 		var i;
-		if(what == \didFree) {
+		switch(what)
+		{ \didFree } {
 			i = ~maps.detectIndex { |pair| pair[\map] === obj };
 			if(i.notNil) {
 				obj.removeDependant(currentEnvironment);
 				~maps.removeAt(i);
 			};
+		}
+		{ \multiCache } {
+			~multiCache[args[0]] = args[1];
 		};
 	};
 

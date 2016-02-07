@@ -485,3 +485,17 @@ BP(\mw).bufMgr.maps[0].listVars
 
 // clear all
 BP(\mw).bufMgr.bufs
+
+
+// xy bug
+Ndef(\a).clear;
+Ndef(\a, { |freq = 440, fmul = 1.5| SinOsc.ar(freq * [1, fmul], 0, 0.1) });
+Ndef(\a).addSpec(\fmul, [1, 2, \exp]);
+
+Ndef(\a).play;
+Ndef(\a).stop;
+
+BP(\mw).oscMapMgr.maps[0].map.listVars
+BP(\mw).oscMapMgr.maps[0].map.multiCache
+BP(\mw).oscMapMgr.maps[1].map.multiCache  // after starting second
+
