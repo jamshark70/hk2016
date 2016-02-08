@@ -93,7 +93,7 @@
      Relevant factors:
      - /Size/ of the range: $high - low$.
      - /Offset/: Low boundary's position, relative to 0.
-**** $normData \times scale + offset$ is a common pattern.
+**** /normData/ $\times$ /scale/ $+$ /offset/ is a common pattern.
 
 *** Data range mapping: Panning
 **** For example, panning.
@@ -108,7 +108,7 @@ $pan = norm \times 2 - 1$
 #+END_CENTER
 
 *** Mapping curves
-**** $normData \times scale + offset$ is \egls{linear} mapping.
+**** /normData/ $\times$ /scale/ $+$ /offset/ is \egls{linear} mapping.
      - *In:* Straight line 0--1.
      - *Out:* Straight line @@latex:\emph{low}--\emph{high}@@.
      - 0.1 vs. 0.2 feels the same as 0.5 vs. 0.6.
@@ -116,6 +116,7 @@ $pan = norm \times 2 - 1$
      Other mapping styles:
      - \Gls{exponential} :: Useful for frequencies and durations.
      - Curved :: Uses a curve factor to "pull" the straight line toward the left or right.
+**** Scrap: $normData \times scale + offset$			   :noexport:
 
 *** Exponential mapping
 **** Frequency is an \egls{exponential} scale.
