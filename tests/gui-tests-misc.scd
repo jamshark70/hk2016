@@ -1,6 +1,9 @@
 // testing wrapper
-BP(\mw).free;
-PR(\mobileWorkshopGUI) => BP(\mw);
+BP(\mw1).free;
+PR(\mobileWorkshopGUI) => BP(\mw1);
+
+BP(\mw2).free;
+PR(\mobileWorkshopGUI) => BP(\mw2);
 
 Ndef(\buf, { |bufnum, amp = 0.1| (PlayBuf.ar(1, bufnum, loop: 1) * amp).dup });
 
@@ -499,3 +502,7 @@ BP(\mw).oscMapMgr.maps[0].map.listVars
 BP(\mw).oscMapMgr.maps[0].map.multiCache
 BP(\mw).oscMapMgr.maps[1].map.multiCache  // after starting second
 
+
+
+// multiple responders... going to the wrong place
+BP(\mw2).oscMapMgr.maps[0].map.listVars

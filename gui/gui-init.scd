@@ -239,12 +239,12 @@ Proto {
 
 // NP parameter
 Proto {
-	~touch = \mwtouch;  // replace
+	~touchName = \mwtouch;  // replace
 	~xyzSmoother = \mwxyz;
 	~spec = #[0, 1].asSpec;
 
 	~prep = {
-		// if(touchKey.notNil) { ~touch = touchKey };
+		// if(touchKey.notNil) { ~touchName = touchKey };
 		~multiCache = ~multiCache.deepCopy;
 		~getTouchIDs.();
 		~userprep.();
@@ -253,7 +253,7 @@ Proto {
 
 	~getTouchIDs = {
 		if(~touchKeys.isNil) {
-			~touchThings = BP(~touch).saveKeys.as(Array);
+			~touchThings = BP(~touchName).saveKeys.as(Array);
 			// HACK
 			~touchThings.remove('/1/xy');
 			~touchThings = ~touchThings
@@ -278,7 +278,7 @@ Proto {
 		~userUnregister.();
 		~resp.remove;  // osc responses
 		// this may be invoked during window close, in which case the touch object is already gone
-		if(BP.exists(~touch)) {
+		if(BP.exists(~touchName)) {
 			~setTouchValue.(0);
 		};
 		currentEnvironment
@@ -296,7 +296,7 @@ Proto {
 				);
 			} {
 				~resp = NotificationCenter.register(
-					BP(~touch).v, ~touchKey, UniqueID.next, e { |args|
+					BP(~touchName).v, ~touchKey, UniqueID.next, e { |args|
 						~action.(args[1]);
 					}
 				);
@@ -374,9 +374,9 @@ Proto {
 			key = ~touchKey;
 		};
 		if(value.notNil) {
-			BP(~touch).viewChanged(key, value);
+			BP(~touchName).viewChanged(key, value);
 		} {
-			BP(~touch).viewChanged(key, 0);
+			BP(~touchName).viewChanged(key, 0);
 		};
 	};
 
@@ -384,7 +384,7 @@ Proto {
 		if(path.asString.contains("acc")) {
 			~xyzSmoother
 		} {
-			~touch
+			~touchName
 		};
 	};
 
@@ -914,6 +914,9 @@ Proto {
 } => PR(\abstractScrollParent);
 
 PR(\abstractScrollParent).clone {
+	~touchName = \mwtouch;  // default, parent will override
+	~xyzSmoother = \mwxyz;
+
 	~userprep = {
 		~multiCache = ('/1/xy': [0, 0], '/accxyz': [0, 0, 0]);
 		~maps = Array.new;
@@ -969,7 +972,11 @@ PR(\abstractScrollParent).clone {
 	~newMap = { |mapKey, guiKey|
 		var map, gui;
 		if(guiKey.isNil) { guiKey = (mapKey ++ "Gui").asSymbol };
-		map = PR(mapKey).copy.put(\multiCache, ~multiCache).prep;
+		map = PR(mapKey).copy
+		.put(\multiCache, ~multiCache)
+		.put(\touchName, ~touchName)
+		.put(\xyzSmoother, ~xyzSmoother)
+		.prep;
 		gui = PR(guiKey).copy.prep(map, ~layout, false);  // don't add to layout!
 		if(map.notNil) {
 			~addView.(gui.view);
@@ -1803,6 +1810,7 @@ Proto {
 		~oscMapMgrView.layout = VLayout().margins_(0).spacing_(4);
 		~oscMapMgr = PR(\touchMapManager).copy
 		.put(\space, ~space)
+		.put(\touchName, ~oscMgr.touchName)
 		.prep(~oscMapMgrView, ~oscMapMgrView.layout);
 		~bufMgr = PR(\bufferManager).copy.put(\space, ~space).prep;
 		~bufMgrView.layout = VLayout();
