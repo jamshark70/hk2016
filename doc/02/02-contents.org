@@ -11,6 +11,7 @@
      #+BEGIN_CENTER
      Physical action $\to$ data (numbers).
      #+END_CENTER
+#+latex: \setcounter{lstlisting}{8}
 
 #+call: makegloss :exports (if hjh-exporting-slides "results" "none") :results value latex
 #+results: makegloss
@@ -318,7 +319,7 @@ If you have several devices sending OSC to the same computer, the
 **** You /must/ set the host and outgoing port!
      - Host
        - In Linux, running =ifconfig= dumps a bunch of output.
-       - The =wlan0= section shows the computer's IP:\\<all>
+       - The =wlan0= section shows the computer's IP:@@latex:\\<all>@@
 	 =inet addr:192.168.1.103=
        - The TouchOSC host should be whatever is shown here.
      - Port
@@ -384,8 +385,8 @@ o = OSCFunc({ |msg|  // really, only need the message
      The commands divide in two parts:
      - =/1= is for the screen number.
      - =/fader1= gives the control type and its number.
-     The command path just puts them together:\\<all>
-     =/1/fader1=\\<all>
+     The command path just puts them together:@@latex:\\<all>@@
+     =/1/fader1=@@latex:\\<all>@@
      =/3/toggle2=, etc.
 
 *** TouchOSC message values
@@ -438,6 +439,28 @@ Ndef(\oscil, { |freq = 440|
    VarSaw.ar(freq, 0, 0.3, 0.1).dup
 });
 #+end_src
+
+*** Article: Note on reassignment			    :B_ignoreheading:
+    :PROPERTIES:
+    :BEAMER_env: ignoreheading
+    :END:
+The line \cd{freq = Lag.kr(freq, 0.1);} might seem odd. \ci{freq} is
+already a control input; how, then, could it equal something else?
+
+In almost all programming languages, \ci{=} is used for
+\egls{variable} \egls{assignment}. \cd{name = value} means to evaluate
+the expression(s) after the equals-sign, and then store that result
+under the variable name.
+
+Here, \ci{freq} starts as a control input (created automatically, as
+this is a synthesis function). The expression "wraps" the control
+input inside a \ugen{Lag}, creating a chain: \ci{freq} control $\to$
+\ugen{Lag}. Now, we want to use the lagged frequency throughout,
+instead of the original one (which has a zipper-noise problem). We
+could declare a new variable for this---but \ci{freq} is just as
+descriptive. As long as you don't need access to the original value,
+there's no problem to reuse the variable name, and simply assign the
+\ugen{Lag} chain to it.
 
 *** Summary: Mobile control
 **** Setup
@@ -570,3 +593,183 @@ Ndef(\drone).addSpec(\pos, [0, 1]);
 **** Now, the control should be connected.
      - (According to the range mapping given by \mth{addSpec}.)
      - Remove a mapping using the X button.
+
+*** Save and load sets
+**** Buffer and OSC mapping sets can be saved on disk.
+     Saved separately:
+     - You can have several control panels on one machine.
+     - Only one server on the computer. \\
+       Buffers live on the server: Same for all panels.
+     - OSC mapping sets are for one device.
+
+*** Saving control input values
+**** Values are found in a proxy's \clss{NodeMap}.
+#+name: nodemap1
+#+caption: Viewing current values for control input, using nodeMap.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\drone).nodeMap;
+-> ProxyNodeMap[ (out -> 4), (amp -> 0.52356401612797), (i_out -> 4), (pos -> 0.33108108108108) ]
+#+END_SRC
+**** OSC mapping sets don't save the values.
+     You should look at the nodeMap, and put the values you want into
+     the \clss{Ndef}'s defaults.
+
+*** Restoring a session
+**** To reload your work:
+     1. Load the buffer set.
+     2. Re-create the \clsspl{Ndef}. \\
+	(Save their code in a \ci{.scd} file.)
+     3. Load the OSC mapping set.
+**** *Important:* Load the buffer set first!
+     SC's grain UGens don't like it if the source buffer doesn't exist.
+
+** Creative options
+*** Basic granulation
+**** Let's go back to that basic granulator.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\src, { |tfreq = 20, overlap = 1, bufnum, rate = 1, pos = 0.5, amp = 0.1|
+   var trig = Impulse.ar(tfreq),
+   dur = overlap / tfreq;
+   GrainBuf.ar(2, trig, dur, bufnum, rate, pos, mul: amp)
+});
+Ndef(\src).addSpec(\tfreq, [5, 200, \exp], \overlap, [0.1, 10, \exp], \rate, [0.2, 5, \exp], \pos, [0, 1]);
+#+END_SRC
+**** What else can we do with it?
+
+*** Randomize position and trigger rate
+**** Randomize some parameters.
+     Earlier: Randomizing to avoid comb filter effects. \\
+     Now:
+     - Cut the buffer into random slices: \ugen{TRand}.
+     - Slide forward and back gently: \ugen{LFDNoise3}.
+     - Sliding pitches from trigger frequency in the audio range.
+     - Try \ugen{Dust} instead of \ugen{Impulse} for triggers.
+     - Also try all of these with low and high overlap.
+
+*** Randomized slides
+**** This example randomizes \ci{pos} and \ci{tfreq}.
+#+name: basicG2
+#+caption: Randomize the basic granulator: Slow curves for pos and tfreq.
+#+BEGIN_SRC {SuperCollider} -i
+Ndef(\src, { |tfreq = 20, overlap = 1, bufnum, rate = 1, pos = 0.5, amp = 0.1,
+   tfreqRand = 1, posRand = 0, randSpeed = 0.2, panWidth = 0|
+   var trig, dur, posRandomizer;
+   tfreq = tfreq * LFDNoise1.kr(randSpeed).exprange(tfreqRand.reciprocal, tfreqRand);
+   trig = Impulse.ar(tfreq);
+   dur = overlap / tfreq;
+   posRandomizer = LFDNoise3.kr(randSpeed + Rand(0.015, 0.32)).range(posRand.neg, posRand);
+   pos = clip(pos + posRandomizer, 0, 1);
+   GrainBuf.ar(2, trig, dur, bufnum, rate, pos, mul: amp);
+});
+Ndef(\src).addSpec(\tfreqRand, [1, 5.midiratio, \exp], \posRand, [0, 0.25, \lin], \randSpeed, [0.05, 10, \exp]);
+#+END_SRC
+
+*** Fatten it up: Layering
+**** Still sounds thin.
+     Common solution: Mix several copies, with slightly different random changes.
+     - Too much to project the code on screen.
+     - SuperCollider uses \clsspl{Array} for parallel copies of signal chains.
+     - Stereo separation by panning. \\
+       \ugen{Splay} spreads out several signals across the stereo field.
+
+*** Layering code example
+#+name: basicG3
+#+caption: Several GrainBuf chains, spread out between left and right, mixed together.
+#+BEGIN_SRC {SuperCollider} -i :exports (if hjh-exporting-slides "none" "code")
+(
+var num = 7;  // 'num' must be a real number, not a control
+
+Ndef(\src, { |tfreq = 20, overlap = 1, bufnum, rate = 1, pos = 0.5, amp = 0.1,
+   tfreqRand = 1, posRand = 0, randSpeed = 0.2, panWidth = 0|
+   var trig, dur, posRandomizer, sigs;
+   tfreq = tfreq * Array.fill(num, {
+      LFDNoise1.kr(randSpeed).exprange(tfreqRand.reciprocal, tfreqRand)
+   });
+   trig = Impulse.ar(tfreq);
+   dur = overlap / tfreq;
+   posRandomizer = Array.fill(num, {
+      LFDNoise3.kr(randSpeed + Rand(0.015, 0.32)).range(posRand.neg, posRand)
+   });
+   pos = clip(pos + posRandomizer, 0, 1);
+   sigs = GrainBuf.ar(1, trig, dur, bufnum, rate, pos, mul: amp);
+   Splay.ar(sigs, panWidth)
+});
+)
+Ndef(\src).addSpec(\panWidth, [0, 1]);
+#+END_SRC
+
+#+name: basicG3
+#+caption: Arrays to create several randomized positions and trigger rates.
+#+BEGIN_SRC {SuperCollider} -i :exports (if hjh-exporting-slides "code" "none")
+(
+var num = 7;  // 'num' must be a real number, not a control
+
+Ndef(\src, { ...
+   tfreq = tfreq * Array.fill(num, {
+      LFDNoise1.kr(randSpeed).exprange(tfreqRand.reciprocal, tfreqRand)
+   });
+   posRandomizer = Array.fill(num, {
+      LFDNoise3.kr(randSpeed + Rand(0.015, 0.32)).range(posRand.neg, posRand)
+   });
+   ...
+});
+)
+#+END_SRC
+
+*** Code complexity
+**** Listing [[basicG3]] is fairly complex!
+     Common procedure:
+     1. Start with something very simple.
+     2. "What if it did X or Y instead?"
+     3. Add something.
+     4. Go back to 2, and keep adding things.
+     You end up with something complicated, but all the individual steps were simpler.
+
+*** Explore your soundfile(s)
+**** Look for combinations of settings that sound interesting.
+     - Often at the extremes.
+     - /Contrast/ is a useful guiding idea.
+
+*** OSC function mapping
+**** Run any code for a controller:
+     - Replace the granulator in an \clss{Ndef}.
+     - \mth{set} lots of controls, to change suddenly to a different sound.
+     - The OSC control's value is passed as an argument. Use with \cd{if()} for toggles.
+#+name: funcMap
+#+caption: Template for function mapping.
+#+BEGIN_SRC {SuperCollider} -i
+{ |value|
+   if(value > 0) {
+      ... do something...
+   };
+}
+#+END_SRC
+
+* Where to go from here
+** Continuing study
+*** Going further...
+**** If you are interested and want to learn more:
+     - Learn more about programming!
+     - Look into different kinds of control devices.
+     - Be patient. Give yourself time.
+
+*** Learn more about programming
+**** Interesting projects require more programming technique.
+     - This workshop is mostly about external control by OSC.
+     - We skipped /a lot/ of details about programming!
+**** In SuperCollider, follow the tutorial series.
+     - /Getting Started/. [[http://doc.sccode.org/Tutorials/Getting-Started/00-Getting-Started-With-SC.html][Web link]]
+     - This means un-learning some old ways of thinking.
+
+*** Investigate control devices
+**** Be aware of control devices---not just MIDI.
+     Sometimes, reading about a device gives you an idea for a project.
+
+*** Be patient
+**** The only way: Start with baby steps.
+     - Everybody wants to skip over the fundamentals.
+     - If you do, eventually you have to go back and learn them anyway.
+     - Better to start with simpler concepts and do them right.
+
+*** Rule #1
+**** It should be fun!

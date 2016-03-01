@@ -207,7 +207,7 @@ ERROR: syntax error, unexpected BADTOKEN, expecting ')'
      - *Optional:* The /sc3-plugins/ pack (additional synthesis units).
        - Precompiled for OSX and Windows:\\
 	 http://sourceforge.net/projects/sc3-plugins/files
-       - Linux: Look for packages for your distribution.\\<all>
+       - Linux: Look for packages for your distribution.@@latex:\\<all>@@
 	 Ubuntu: https://launchpad.net/~supercollider/+archive/ppa.\\
 	 Install the /supercollider/ and /supercollider-plugins/ packages.
 
@@ -513,8 +513,8 @@ Ndef(\sine).set(\freq, Ndef(\randF));
          numbers.
        - 1: Make a straight-line ramp between the random values. Other
          choices are: 0 = hold the random value until the next one
-         (stairstep effect), and 2 = make a slight curve (a bit
-         smoother).\glsadd{LFDNoise0}\glsadd{LFDNoise2}
+         (stairstep effect), and 3 = make a slight curve (a bit
+         smoother).\glsadd{LFDNoise0}\glsadd{LFDNoise3}
 
 At this early stage, everything we do with sound will introduce many
 new UGens. It's like learning a new language: One new word draws in
@@ -777,7 +777,8 @@ Ndef(\g).addSpec(\rpos, [0, 0.1], \rrate, [1, 2.midiratio, \exp]);
 	- *Hint:* Drag the file into the editor window.
 	- If it's stereo, use \mth{readChannel}.
      3. Replay the Ndefs. Discover interesting sounds using GUI sliders.
-     4. Try other \ci{pos} generators: \ugen{LFSaw}, \ugen{LFTri}, \ugen{LFPulse}, \ugen{VarSaw}.
+     4. Try other \ci{pos} generators: \ugen{LFSaw}, \ugen{LFTri},
+        \ugen{LFPulse}, \ugen{VarSaw}, and especially \ugen{LFDNoise3}..
      5. Edit so that \cd{Ndef(\textbackslash g)} includes the \ci{pos}
         generator within its own function. (I.e., remove the need for
         \cd{Ndef(\textbackslash pos)}.)
@@ -804,7 +805,15 @@ Ndef(\g).addSpec(\rpos, [0, 0.1], \rrate, [1, 2.midiratio, \exp]);
 3. Don't be afraid to try extreme values. Change the numbers in
    \mth{addSpec} if you have to.
 4. This is a good chance to get familiar with the SC help system:
-   \ks{Ctrl-D}.
+   \ks{Ctrl-D}. Also, there's a peculiar reason why \ugen{LFDNoise3}
+   is important: Its output is curved. \ugen{LFSaw}, \ugen{LFTri} and
+   \ugen{VarSaw} make straight lines. It turns out that \ci{pos}
+   moving in a straight line---constant speed---produces a distinct
+   effect on the tone color. The exact effect depends on the
+   relationship between the trigger frequency and the slope of
+   \ci{pos}. When the line changes direction, the slope changes
+   suddenly---and so does the tone color effect. To avoid this, use a
+   curved control signal, where the slope is always changing.
 5. It's a useful skill to be able to move signal processors around,
    and reconfigure their connections. It takes a lot of time to
    develop this skill---be patient!
