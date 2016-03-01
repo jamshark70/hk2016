@@ -1,5 +1,5 @@
 if(PR.exists(\abstractTouch).not) {
-	(Quarks.at("ddwProtoLib").localPath +/+ "mobile-objects.scd").loadPath;
+	(PR.filenameSymbol.asString.dirname.dirname +/+ "ddwProtoLib/mobile-objects.scd").loadPath;
 };
 
 // color theme (dark):
