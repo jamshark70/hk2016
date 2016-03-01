@@ -444,7 +444,10 @@ Ndef(\sine, { |freq = 440, amp = 0.1|
        :PROPERTIES:
        :BEAMER_col: 0.25
        :END:
+       #+BEGIN_CENTER
+       #+ATTR_LATEX: :width 1.5in
        [[../01/img/synth-graph.pdf]]
+       #+END_CENTER
 
 *** Synthesis functions: Summary
 **** In a synthesis function:
