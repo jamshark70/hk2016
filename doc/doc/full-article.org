@@ -34,19 +34,16 @@
 #+call: ugengloss :exports (if hjh-exporting-slides "none" "results") :results value latex
 #+results: ugengloss_art
 
-** Preface							   :noexport:
+** Preface
 *** Preface                                                :B_ignoreheading:
     :PROPERTIES:
     :BEAMER_env: ignoreheading
     :END:
 **** Project history
-In autumn 2013, 张睿博 (Zhang Ruibo, Shenyang Conservatory and head of
-CHEARS, the China ElectroAcoustic Resource Survey) approached me to
-present a week-long introductory SuperCollider workshop in
-April 2014. I wrote this material in the first couple of months
-of 2014.
+This workshop was written for a ten-hour course to be presented in
+spring 2016 at the Hong Kong Design Institute.
 
-**** Overview
+**** Overview							   :noexport:
 This document includes all the presentation slides from the workshop,
 plus further explanation in text, an Appendix with additional topics
 (interesting, but too much for one week!), and an index and glossary
@@ -97,9 +94,9 @@ selected examples. I strongly recommend using the selected examples
 only. You will learn more by typing the examples yourself, instead of
 passively executing them.
 
-The document is written using /org-mode/ 8.2.3[fn:44f1f911] running in
-Emacs 23, and typeset using LaTeX (/xelatex/ from TexLive
-2012[fn:7ef32d12]) with \emph{Beamer} extensions.[fn:de025f42]
+The document is written using /org-mode/ 8.3[fn:44f1f911] running in
+Emacs 24, and typeset using LaTeX (/xelatex/ from TexLive
+2013[fn:7ef32d12]) with \emph{Beamer} extensions.[fn:de025f42]
 
 **** Copyleft and licensing
 This document and all associated materials are released under the
@@ -176,5 +173,5 @@ I won't attempt a complete list of thanks, but here's a good start:
 
 [fn:702be408] http://www.levien.com/type/myfonts/inconsolata.html
 
-[fn:f5932a27] https://bitbucket.org/Jubobs/sclang-prettifier
+[fn:f5932a27] https://www.ctan.org/pkg/sclang-prettifier
 
