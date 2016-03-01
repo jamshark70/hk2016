@@ -160,3 +160,5 @@ Ndef(\drone).play;
 Ndef(\drone).stop;
 
 Ndef(\drone).addSpec(\pos, [0, 1]);
+
+Ndef(\drone).nodeMap;
