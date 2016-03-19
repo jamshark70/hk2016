@@ -216,10 +216,10 @@ ERROR: syntax error, unexpected BADTOKEN, expecting ')'
      Not part of the base installation.
      - *Note:* This assumes you're starting with no extensions except sc3-plugins.
 **** To install:
-     1. In SC, run \cd{Platform.userExtensionDir;}.\\
-	This tells you where to put the files.
+     1. In the IDE, /File/ menu $\to$ /Open user support directory/.
      2. Extract the =extensions.zip= file.
-     3. Copy or move the extracted files into the extension directory.
+     3. Copy or move the extracted folders into the user support directory.
+     Now the app support directory should have =Extensions/= and =workshop-init/=.
 
 *** For SuperCollider 3.6					   :noexport:
 **** Most of you are running SuperCollider 3.6.
@@ -237,19 +237,32 @@ ERROR: syntax error, unexpected BADTOKEN, expecting ')'
       2. Copy the file into this location.
       3. Rename it so that its extension is only =sc=.
 
-*** *Yes? No?* Startup file					   :noexport:
+*** Startup file
 **** SC needs to run an extra code file during startup.
      1. In the IDE, /File/ menu $\to$ /Open startup file/.
      2. Copy and paste the line below:
 	#+name: startup
 	#+caption: Add this line to the startup file.
 	#+begin_src {SuperCollider}
-	(Platform.userExtensionDir +/+ "psSet-event-type.scd").load;
+(Platform.userAppSupportDir +/+ "workshop-init/gui-init.scd").load;
 	#+end_src
      3. Save. Make sure the filename is =startup.scd=.
 **** Now, recompile the class library.
      - "Recompiling" resets everything in the language.
      - \ks{Ctrl-Shift-L}
+
+*** Test the installation
+**** To be sure everything is in the right place:
+     After recompiling the class library, run the statement in Listing [[test1]].
+#+name: test1
+#+caption: Test the installation.
+#+BEGIN_SRC {SuperCollider} -i
+PR(\mobileWorkshopGUI) => BP(\mw);
+#+END_SRC
+     - If everything is working, a window with several controls will appear.
+     - If not, copy the contents of the post window and send it to me.
+**** We won't use this interface just yet.
+     OK to close the window.
 
 *** Audio setup
 **** OSX
