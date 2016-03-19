@@ -1,0 +1,298 @@
+#+bind: org-latex-title-command "\\maketitle"
+#+bind: org-beamer-outline-frame-title ""
+#+BIND: org-latex-listings-options (("style" "SuperCollider-IDE") ("basicstyle" "\\ttfamily") ("captionpos" "b") ("tabsize" "3"))
+
+#+OPTIONS: ':t *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t
+#+OPTIONS: c:nil creator:comment d:(not "LOGBOOK") date:t e:t
+#+OPTIONS: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t
+#+OPTIONS: tags:t tasks:t tex:t timestamp:t toc:t todo:t |:t
+#+TITLE: SuperCollider workshop:@@latex:\\@@Recognizing common errors
+#+AUTHOR: H. James Harkins
+#+EMAIL: dlm@hjh-e431
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 24.3.1 (Org mode 8.3beta)
+
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [a4paper,11pt]
+# #+LATEX_HEADER:
+# #+LATEX_HEADER_EXTRA:
+#+DATE: \today
+
+#+LATEX_HEADER: \setcounter{tocdepth}{1}
+#+LATEX_HEADER: \setcounter{secnumdepth}{2}
+
+#+LATEX_HEADER: \usepackage{fontspec}
+#+LATEX_HEADER: \setmainfont[Ligatures={Common,TeX}]{CharisSIL}
+#+LATEX_HEADER: \setmonofont{Inconsolata}
+
+#+LATEX_HEADER: \usepackage{enumitem}
+# # unused: ,labelwidth=0.49cm,labelsep=0cm,align=left,leftmargin=1cm,rightmargin=1cm,before=\small\raggedright,after=\normalsize
+#+LATEX_HEADER: \setlist{noitemsep}
+
+#+LATEX_HEADER: \usepackage[indentfirst=false]{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{WenQuanYi Zen Hei}
+#+LATEX_HEADER: \setCJKsansfont{WenQuanYi Zen Hei}
+#+LATEX_HEADER: \setCJKmonofont{WenQuanYi Zen Hei}
+
+#+LATEX_HEADER: \usepackage{caption}
+#+LATEX_HEADER: \captionsetup[lstlisting]{font={it,footnotesize},labelfont={it,footnotesize},singlelinecheck=false}
+
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \definecolor{codecolor}{RGB}{0,0,0}
+#+LATEX_HEADER: \newcommand{\cd}[1]{\texttt{#1}}
+#+LATEX_HEADER: \newcommand{\ci}[1]{\mbox{\texttt{#1}}}
+#+LATEX_HEADER: \newcommand{\te}[1]{\emph{#1}}
+#+LATEX_HEADER: \newcommand{\ks}[1]{\framebox[1.05\width]{\texttt{#1}}}
+
+#+LATEX_HEADER: \usepackage{sclang-prettifier}
+
+#+LATEX_HEADER: \hyphenation{Synth-Def Synth-Defs}
+
+* Introduction
+#+LaTeX: \frenchspacing
+
+In this SuperCollider workshop, students will be expected to type code
+from the workshop booklet, or projected onscreen. They will probably
+make a lot of mistakes. Programming languages do not handle mistakes
+easily.
+
+Your role is to help the students find the easiest mistakes to fix:
+
+- Spelling errors.
+- Bracket errors.
+- Syntax errors.
+
+There are many other types of mistakes. If it's a more complicated
+error, I will probably have to look at it myself. But, suppose 75% of
+the mistakes are simple ones. If I have to look at them all, it will
+waste a lot of time. If you can handle some of them, we can move
+faster.
+
+The purpose of this document is to explain these three types of
+errors: how to recognize them, and how to fix them.
+
+Look for error messages in the Post Window section of the editor.
+
+* Spelling errors
+** Classes
+A /class/ defines a "thing" (object) that knows how to do certain tasks.
+
+Class names are always capitalized: \ci{SinOsc}, \ci{Ndef}, \ci{Buffer}.
+
+A class spelling error is easy to recognize: "ERROR: Class not defined."
+
+#+BEGIN_SRC SuperCollider -i
+b = Bufffer.read(s, "path/to/soundfile.wav");
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ERROR: Class not defined.
+  in file 'selected text'
+  line 1 char 11:
+
+  b = Bufffer.read(s, "path/to/soundfile.wav"); 
+#+END_EXAMPLE
+
+The error listing shows which line has the problem. =char 11= points
+to the end of the misspelled word. In this case, you would notice that
+\ci{Bufffer} has three @@latex:\emph{f}'s@@, where it should have
+two. Fix it by deleting the extra /f/.
+
+If a student accidentally forgets a capital letter, it will look like
+a variable error ([[Variables]]).
+
+#+BEGIN_SRC SuperCollider -i
+b = buffer.read(s, "path/to/soundfile.wav");
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ERROR: Variable 'buffer' not defined.
+  in file 'selected text'
+  line 1 char 10:
+
+  b = buffer.read(s, "path/to/soundfile.wav"); 
+#+END_EXAMPLE
+
+** Methods
+Methods are actions that objects know how to do. For example, you can
+ask an \ci{Ndef} to \ci{play}: then, \ci{play} is the /method/.
+
+Usually, a misspelled method produces a "does not understand" error.
+
+#+BEGIN_SRC SuperCollider -i
+b = Buffer.reed(s, "path/to/soundfile.wav");
+#+END_SRC
+
+Here, \ci{reed} should be \ci{read}. The error listing is long. Look
+at the end first: "Message 'reed' not understood" ("reed"的命令未被理解).
+
+#+BEGIN_EXAMPLE
+^^ The preceding error dump is for
+ERROR: Message 'reed' not understood.
+RECEIVER: Buffer
+#+END_EXAMPLE
+
+It tells you which word was not understood. Look for that word in the
+student's code and fix it.
+
+*But:* "Does not understand" errors can happen even if
+everything is spelled correctly. If you don't find obvious mistakes,
+let me take a look.
+
+** Variables
+/Variables/ are names that the program can use to remember
+information, to use later.
+
+Classes and methods are predefined. For variables, the user chooses
+the name.
+
+*** /Declared/ variables
+These appear at the top of code blocks: \cd{var name, name...;}. /You
+have to have a =var= statement at the top!/ Also, the variable has to
+be spelled the same way everywhere. (You may also see \ci{arg} at the
+top of some blocks. These also act like variables. \ci{arg}s may also
+be written inside vertical bars: \ci{\textbar name, name\textbar}.)
+
+The error text is "Variable '***' not defined."
+
+#+BEGIN_SRC SuperCollider -i
+buf = Buffer.read(s, "path/to/soundfile.wav");
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ERROR: Variable 'buf' not defined.
+  in file 'selected text'
+  line 1 char 46:
+
+  buf = Buffer.read(s, "path/to/soundfile.wav"); 
+#+END_EXAMPLE
+
+If you see this, look for one of these problems:
+
+1. Missing \ci{var} line. This example could be fixed:
+   #+BEGIN_SRC SuperCollider -i
+   var buf;
+   buf = Buffer.read(s, "path/to/soundfile.wav");
+   #+END_SRC
+
+2. Different spelling in the \ci{var} line. You would get the same
+   error with this code block, because \cd{var buffer} is different
+   from \ci{buf} later.
+   #+BEGIN_SRC SuperCollider -i
+   var buffer;
+   buf = Buffer.read(s, "path/to/soundfile.wav");
+   #+END_SRC
+
+3. The given code example uses an /environment variable/, but the
+   student wrote a /declared/ variable. See the next section.
+
+*** /Environment/ variables
+/Environment/ variables have a squiggle at the beginning:
+\ci{\textasciitilde buf}. They should /not/ be declared by \ci{var}!
+(Because they are not declared, there is no "not defined" error
+message.)
+
+Why two types? \ci{var} variables are temporary. Environment variables
+are more permanent. The code examples so far use a \ci{Buffer} to hold
+a sound file. You don't want to load a sound file, and then forget
+where you put it. So, environment variables are better for this
+use.
+# (In the workshop code, you'll see a lot of \ci{var}s in
+# audio-processing \ci{Ndef} statements. These /should/ be temporary.)
+
+If an environment variable is misspelled, probably one of the names
+will be "empty," that is, \ci{nil}. The code will be asking \ci{nil}
+to do something that it doesn't know how to do: "does not understand."
+
+#+BEGIN_SRC SuperCollider -i
+~buffer = Buffer.read(s, "path/to/soundfile.wav");
+
+~buf.duration;  // Ask the buffer: How many seconds?
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+^^ The preceding error dump is for
+ERROR: Message 'duration' not understood.
+RECEIVER: nil
+#+END_EXAMPLE
+
+The key here is \cd{RECEIVER: nil}. You expected \ci{duration} to
+apply to a \ci{Buffer} object. Instead, it went to \ci{nil}. This
+means \ci{\textasciitilde buf} did not contain the expected
+object---because the expected object was actually assigned into
+\ci{\textasciitilde buffer}.
+
+* Bracket errors
+Like many languages, SuperCollider uses bracket pairs to group parts of the code together.
+
+They should always be in pairs:
+
+- @@latex:\cd{(  )}@@
+- @@latex:\cd{[  ]}@@
+- @@latex:\cd{\{  \}}@@
+
+If they are not in pairs, this is the error:
+
+#+BEGIN_SRC SuperCollider -i
+Ndef(\sine, { |freq = 440, amp = 0.1|
+   (SinOsc.ar(freq * amp).dup
+});
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ERROR: Parse error
+  in file 'selected text'
+  line 3 char 1:
+
+  });
+  ^
+   
+-----------------------------------
+opening bracket was a '(', but found a '}'
+  in file 'selected text' line 3 char 1
+#+END_EXAMPLE
+
+For this type of error, normally the problem happened before the
+indicated place. Line 2 has two \ci{(} characters, but only one
+\ci{)}. The @@latex:\ci{\}}@@ in the last line matches the first
+\ci{(}, and that's illegal.
+
+To fix this, look carefully at the brackets in the original code that
+the student is copying. Here, the original is:
+
+#+BEGIN_SRC SuperCollider -i
+Ndef(\sine, { |freq = 440, amp = 0.1|
+   (SinOsc.ar(freq) * amp).dup
+});
+#+END_SRC
+
+A-ha. Now it makes more sense: \ci{freq} belongs to the sine
+oscillator; \ci{* amp} applies to the oscillator, not to the
+frequency.
+
+* Syntax errors
+There are too many of these to list. The error message, however, looks
+like this:
+
+#+BEGIN_SRC SuperCollider -i
+Ndef(\sine, { arg freq = 440 amp = 0.1;
+   (SinOsc.ar(freq) * amp).dup
+});
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+ERROR: syntax error, unexpected NAME, expecting ELLIPSIS
+  in file 'selected text'
+  line 1 char 32:
+
+  Ndef(\sine, { arg freq = 440 amp = 0.1;
+                               ^^^
+#+END_EXAMPLE
+
+If you see this, again, compare against the original example. (In this
+case, \cd{arg freq = 440 amp = 0.1} needs a comma before \ci{amp}:
+\cd{arg freq = 440, amp = 0.1}.)
