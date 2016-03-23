@@ -23,7 +23,7 @@
 #+DATE: \today
 
 #+LATEX_HEADER: \setcounter{tocdepth}{1}
-#+LATEX_HEADER: \setcounter{secnumdepth}{2}
+#+LATEX_HEADER: \setcounter{secnumdepth}{3}
 
 #+LATEX_HEADER: \usepackage{fontspec}
 #+LATEX_HEADER: \setmainfont[Ligatures={Common,TeX}]{CharisSIL}
@@ -77,7 +77,64 @@ errors: how to recognize them, and how to fix them.
 
 Look for error messages in the Post Window section of the editor.
 
+* Overview; Troubleshooting process
+Especially at the beginning of the workshop, I will provide the code
+examples. So, you don't have to know what is correct. Follow these
+points to know what to look for---then check the student's code
+against my original.
+
+#+BEGIN_EXAMPLE
+ERROR: Message 'keyword' not understood.
+#+END_EXAMPLE
+
+- Check for a misspelled /method/ name. See [[Methods]].
+
+- (Especially if you see \cd{RECEIVER: nil}): Check for a misspelled
+  /environment variable/ (\ci{\textasciitilde} and a name). See
+  [[Environment variables]].
+
+#+BEGIN_EXAMPLE
+ERROR: Variable 'keyword' not defined.
+#+END_EXAMPLE
+
+- Is the keyword declared? See [[Declared variables]].
+  - \cd{var name, name, ...;}
+  - \cd{arg name, name, ...;}
+  - \cd{\textbar name, name, ...\textbar}
+
+- Is there a \ci{var} line, but the keyword is different? See [[Declared variables]].
+
+- Is the keyword supposed to be a class name (like \ci{Buffer}), but
+  the student wrote lowercase (\ci{buffer})? See [[Classes]].
+
+#+BEGIN_EXAMPLE
+ERROR: Class not defined.
+#+END_EXAMPLE
+
+- Check for spelling of capitalized words: \ci{NDef} (wrong)
+  vs. \ci{Ndef} (right). See [[Classes]].
+
+#+BEGIN_EXAMPLE
+ERROR: Parse error; opening bracket was a '(', but found a '}'
+#+END_EXAMPLE
+
+- Check the lines /before/ the point of the error, looking for pairs
+  of \ci{( )}, \ci{[ ]} or @@latex:\ci{\{ \}}@@ that don't match. See
+  [[Bracket errors]].
+
+#+BEGIN_EXAMPLE
+ERROR: syntax error, unexpected ..., expecting ...
+#+END_EXAMPLE
+
+- Lots of possible causes. Compare against the given code example
+  carefully. See [[Syntax errors]].
+
+If the error doesn't fit one of these, call me over to look at it.
+
 * Spelling errors
+*IMPORTANT:* For spelling, pay attention to capital
+letters. \ci{SinOsc} (correct) and \ci{Sinosc} (wrong) are different.
+
 ** Classes
 A /class/ defines a "thing" (object) that knows how to do certain tasks.
 
@@ -144,13 +201,13 @@ everything is spelled correctly. If you don't find obvious mistakes,
 let me take a look.
 
 ** Variables
-/Variables/ are names that the program can use to remember
-information, to use later.
+/Variables/ are names for the program to remember information, to use
+later.
 
 Classes and methods are predefined. For variables, the user chooses
 the name.
 
-*** /Declared/ variables
+*** Declared variables
 These appear at the top of code blocks: \cd{var name, name...;}. /You
 have to have a =var= statement at the top!/ Also, the variable has to
 be spelled the same way everywhere. (You may also see \ci{arg} at the
@@ -190,7 +247,7 @@ If you see this, look for one of these problems:
 3. The given code example uses an /environment variable/, but the
    student wrote a /declared/ variable. See the next section.
 
-*** /Environment/ variables
+*** Environment variables
 /Environment/ variables have a squiggle at the beginning:
 \ci{\textasciitilde buf}. They should /not/ be declared by \ci{var}!
 (Because they are not declared, there is no "not defined" error
