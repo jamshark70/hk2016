@@ -614,7 +614,7 @@ returns =/usr/local/share/SuperCollider=; on Mac, it's different.
 
 \ci{+/+} joins the two together, and puts a path separator in between,
 if needed. So, in Linux, the sound file path ends up being
-=/usr/local/share/SuperCollider/sounds/a11wlk01.wav=.
+=/usr/local/share/ SuperCollider/sounds/a11wlk01.wav=.
 
 *** Buffer loading is asynchronous
 **** Look carefully at the output from that command.
@@ -706,6 +706,15 @@ Ndef.clear;  // when done
      This is easier, later, for external control.
      - \cd{pos = frames / BufFrames.kr(bufnum)}.\glsadd{BufFrames}
      - \cd{pos = seconds / BufDur.kr(bufnum)}.\glsadd{BufDur}
+**** To be safe: Set a lower limit on duration.		       :B_alertblock:
+     :PROPERTIES:
+     :BEAMER_env: alertblock
+     :END:
+     - $x \div 0$ is bad.
+     - Happens if you accidentally use a \ci{bufnum} that isn't loaded.
+     - \mth{max} takes the larger of two numbers. \\
+       A positive number here stops 0 from going through.\glsadd{min}
+     \cd{pos = seconds / max(0.01, BufDur.kr(bufnum))}
 
 *** Phasor: Scanning ``pos''
 **** \ugen{Phasor} is a repeating ramp over a given range.
@@ -715,7 +724,7 @@ Ndef.clear;  // when done
        - Audio rate: Use \ugen{SampleDur}.
        - Control rate: Use \ugen{ControlDur}.
      - Then divide by \ugen{BufDur}.
-     \cd{Phasor.kr(0, ControlDur.ir / BufDur.kr(b), 0, 1)}.
+     \cd{Phasor.kr(0, ControlDur.ir / max(0.01, BufDur.kr(b)), 0, 1)}.
 
 *** Triggers
 **** *Problem:* Signals are continuous.

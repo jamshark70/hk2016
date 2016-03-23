@@ -75,14 +75,15 @@
 | ir          |        | Create a initial-rate (one-shot) instance of a UGen. The arguments to ``ir'' establish connections to other UGens                    |
 | kr          |        | Create a control-rate instance of a UGen. The arguments to ``kr'' establish connections to other UGens                               |
 | langPort    |        | \ci{NetAddr.langPort} returns the network port that SuperCollider is listening to. Use this as the outgoing port in TouchOSC or mrmr |
+| max         |        | \cd{max(a, b)} returns the larger of a or b. Good for setting a lower limit                                                          |
 | midicps     |        | Convert a MIDI note number to a frequency in Hz                                                                                      |
 | midiratio   |        | Convert a number of semitones into a frequency factor                                                                                |
+| min         |        | \cd{min(a, b)} returns the smaller of a or b. Good for setting an upper limit                                                        |
 | range       |        | Converts a UGen's range into a different linear range                                                                                |
 | read        |        | \cd{Buffer.read()} creates a new buffer in the server and fills it with audio from a sound file                                      |
 | readChannel |        | Like \cd{Buffer.read}, but reads one or more channels in an order you choose                                                         |
 | resourceDir |        | \cd{Platform.resourceDir} points to a directory of extra resources, which are part of a normal SC installation                       |
 | set         |        | On a synth node or NodeProxy, set a new value for a control input: \cd{n.set(\textbackslash name, value...)}                         |
-
 
 * UGens								   :noexport:
 #+name: ugens
